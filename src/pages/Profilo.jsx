@@ -4,6 +4,7 @@ import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/fire
 import { db, auth } from '../firebase'
 import { signOut } from 'firebase/auth'
 import { calcTotals } from '../config'
+import { updateProfile } from 'firebase/auth'
 
 export default function Profilo({ user }) {
   const navigate = useNavigate()
@@ -65,14 +66,15 @@ export default function Profilo({ user }) {
     loadStats()
   }, [user.uid])
 
-  async function saveName() {
-    if (!nome.trim()) return
-    setSaving(true)
-    await updateDoc(doc(db, 'users', user.uid), { displayName: nome.trim() })
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+async function saveName() {
+  if (!nome.trim()) return
+  setSaving(true)
+  await updateProfile(auth.currentUser, { displayName: nome.trim() })
+  await updateDoc(doc(db, 'users', user.uid), { displayName: nome.trim() })
+  setSaving(false)
+  setSaved(true)
+  setTimeout(() => setSaved(false), 2000)
+}
 
   const pct = stats?.totale > 0 ? Math.round((stats.vinte / stats.totale) * 100) : 0
 
