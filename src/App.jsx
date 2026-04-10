@@ -10,6 +10,7 @@ import Amici from './pages/Amici'
 import Profilo from './pages/Profilo'
 import Classifica from './pages/Classifica'
 import Legal from './pages/Legal'
+import Onboarding from './pages/Onboarding'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
@@ -28,7 +29,13 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-      <Route path="/" element={user ? <Home user={user} /> : <Navigate to="/login" />} />
+      <Route path="/" element={
+        user
+        ? localStorage.getItem('onboarding-done')
+          ? <Home user={user} />
+          : <Navigate to="/onboarding" />
+          : <Navigate to="/login" />
+      } />
       <Route path="/nuova-partita" element={user ? <NuovaPartita user={user} /> : <Navigate to="/login" />} />
       <Route path="/partita/:id" element={user ? <Partita user={user} /> : <Navigate to="/login" />} />
       <Route path="/amici" element={user ? <Amici user={user} /> : <Navigate to="/login" />} />
@@ -36,6 +43,7 @@ export default function App() {
       <Route path="/classifica" element={user ? <Classifica user={user} /> : <Navigate to="/login" />} />
       <Route path="/privacy" element={<Legal page="privacy" />} />
       <Route path="/termini" element={<Legal page="termini" />} />
+      <Route path="/onboarding" element={<Onboarding />} />
     </Routes>
   )
 }
