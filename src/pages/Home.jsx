@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import { db, auth } from '../firebase'
 import { calcTotals } from '../config'
 
 export default function Home({ user }) {
   const [partite, setPartite] = useState([])
+  const [deletingId, setDeletingId] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -21,11 +22,33 @@ export default function Home({ user }) {
     return unsub
   }, [user.uid])
 
+  async function confirmDelete() {
+    await deleteDoc(doc(db, 'partite', deletingId))
+    setDeletingId(null)
+  }
+
   const attive = partite.filter(p => !p.conclusa)
   const concluse = partite.filter(p => p.conclusa)
 
   return (
     <div className="page">
+
+      {/* Modale elimina partita */}
+      {deletingId && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+          <div style={{ background: '#242438', border: '1px solid var(--gold)', borderRadius: '16px', padding: '28px 24px', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
+            <div style={{ fontSize: '28px', marginBottom: '12px' }}>🗑️</div>
+            <div style={{ color: '#f0ebe0', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>
+              Eliminare questa partita? L'azione è irreversibile.
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setDeletingId(null)} style={btnCancel}>Annulla</button>
+              <button onClick={confirmDelete} style={btnConfirm}>Elimina</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
@@ -49,7 +72,15 @@ export default function Home({ user }) {
       {attive.length > 0 && (
         <>
           <div style={sectionTitle}>In corso</div>
-          {attive.map(p => <PartitaCard key={p.id} partita={p} user={user} onClick={() => navigate(`/partita/${p.id}`)} />)}
+          {attive.map(p => (
+            <PartitaCard
+              key={p.id}
+              partita={p}
+              user={user}
+              onClick={() => navigate(`/partita/${p.id}`)}
+              onDelete={e => { e.stopPropagation(); setDeletingId(p.id) }}
+            />
+          ))}
         </>
       )}
 
@@ -57,7 +88,15 @@ export default function Home({ user }) {
       {concluse.length > 0 && (
         <>
           <div style={sectionTitle}>Concluse</div>
-          {concluse.map(p => <PartitaCard key={p.id} partita={p} user={user} onClick={() => navigate(`/partita/${p.id}`)} />)}
+          {concluse.map(p => (
+            <PartitaCard
+              key={p.id}
+              partita={p}
+              user={user}
+              onClick={() => navigate(`/partita/${p.id}`)}
+              onDelete={e => { e.stopPropagation(); setDeletingId(p.id) }}
+            />
+          ))}
         </>
       )}
 
@@ -72,11 +111,12 @@ export default function Home({ user }) {
   )
 }
 
-function PartitaCard({ partita, user, onClick }) {
+function PartitaCard({ partita, user, onClick, onDelete }) {
   const totals = calcTotals(partita.players, partita.mani || [])
   const scores = totals.map(t => t.total)
   const maxScore = Math.max(...scores)
-  const winnerIdx = partita.conclusa ? scores.indexOf(maxScore) : -1
+  const winnerIdx = partita.conclusa && scores.filter(s => s === maxScore).length === 1
+    ? scores.indexOf(maxScore) : -1
 
   return (
     <div className="card" onClick={onClick} style={{ marginBottom: '12px', padding: '16px', cursor: 'pointer' }}>
@@ -84,11 +124,19 @@ function PartitaCard({ partita, user, onClick }) {
         <span style={{ fontSize: '12px', color: 'var(--text-faint)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
           {partita.conclusa ? 'Conclusa' : `Mano ${(partita.mani || []).length + 1}`}
         </span>
-        <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>
-         {partita.createdAt?.toDate
-          ? partita.createdAt.toDate().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
-          : ''}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>
+            {partita.createdAt?.toDate
+              ? partita.createdAt.toDate().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+              : ''}
+          </span>
+          <button
+            onClick={onDelete}
+            style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: '16px', padding: '2px 4px', lineHeight: 1 }}
+          >
+            ✕
+          </button>
+        </div>
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
         {partita.players.map((p, pi) => (
@@ -119,3 +167,6 @@ const sectionTitle = {
   textTransform: 'uppercase', color: 'var(--text-muted)',
   marginBottom: '12px'
 }
+
+const btnConfirm = { flex: 1, padding: '12px', background: 'linear-gradient(135deg, #c9963a, #e8b84b)', border: 'none', borderRadius: '10px', color: '#1a1a2e', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }
+const btnCancel = { flex: 1, padding: '12px', background: 'transparent', border: '1px solid #3d3d58', borderRadius: '10px', color: '#9b95a8', fontSize: '14px', cursor: 'pointer' }
