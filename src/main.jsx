@@ -4,8 +4,13 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 
-const savedTheme = localStorage.getItem('scopa-theme') || 'dark'
-document.documentElement.setAttribute('data-theme', savedTheme)
+const savedTheme = localStorage.getItem('scopa-theme')
+if (savedTheme) {
+  document.documentElement.setAttribute('data-theme', savedTheme)
+} else {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'green')
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

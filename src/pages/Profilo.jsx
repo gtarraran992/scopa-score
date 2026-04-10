@@ -13,7 +13,11 @@ export default function Profilo({ user }) {
   const [saved, setSaved] = useState(false)
   const [stats, setStats] = useState(null)
   const [storico, setStorico] = useState([])
-  const [theme, setTheme] = useState(localStorage.getItem('scopa-theme') || 'dark')
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('scopa-theme')
+    if (saved) return saved
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'green'
+  })
 
   function changeTheme(t) {
   setTheme(t)
