@@ -81,9 +81,30 @@ export default function Partita({ user }) {
     const max = field === 'napoli' ? 10 : field === 'scope' ? 18 : 999
     setCurrent(c => {
       const cur = { ...(c[pi] || {}) }
-      cur[field] = Math.min(max, Math.max(0, (cur[field] || 0) + delta))
+      const current_val = cur[field] || 0
+      const newVal = current_val + delta
+
+      if (field === 'napoli') {
+        if (current_val === 0 && delta > 0) {
+          // Parte da 3 quando si attiva
+          cur[field] = 3
+        } else if (newVal < 3) {
+          // Sotto 3 si azzera (toggle off)
+          cur[field] = 0
+        } else {
+          cur[field] = Math.min(max, newVal)
+        }
+      } else {
+        cur[field] = Math.min(max, Math.max(0, newVal))
+      }
+
       return { ...c, [pi]: cur }
     })
+  }
+
+  // Napoli è preso da un altro giocatore
+  function napoliPresoDA(pi) {
+    return partita.players.some((_, otherPi) => otherPi !== pi && (current[otherPi]?.napoli || 0) > 0)
   }
 
   async function confirmMano() {
@@ -285,16 +306,25 @@ export default function Partita({ user }) {
                       )
                     })}
                   </div>
-                  {counterFields.map(field => (
-                    <div key={field} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' }}>
-                      <span style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{field}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-                        <button onClick={() => changeCounter(pi, field, -1)} style={stepBtn}>−</button>
-                        <span style={{ width: '38px', textAlign: 'center', fontSize: '15px', fontWeight: '500', color: 'var(--cream)', borderLeft: '1px solid var(--ink-soft)', borderRight: '1px solid var(--ink-soft)', lineHeight: '38px' }}>{cur[field] || 0}</span>
-                        <button onClick={() => changeCounter(pi, field, 1)} style={stepBtn}>+</button>
+                  {counterFields.map(field => {
+                    const isNapoli = field === 'napoli'
+                    const napoliBloccato = isNapoli && napoliPresoDA(pi)
+                    return (
+                      <div key={field} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', opacity: napoliBloccato ? 0.3 : 1 }}>
+                        <div>
+                          <span style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{field}</span>
+                          {isNapoli && (
+                            <span style={{ fontSize: '11px', color: 'var(--text-faint)', marginLeft: '6px' }}>min. 3</span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                          <button onClick={() => !napoliBloccato && changeCounter(pi, field, -1)} style={stepBtn} disabled={napoliBloccato}>−</button>
+                          <span style={{ width: '38px', textAlign: 'center', fontSize: '15px', fontWeight: '500', color: 'var(--cream)', borderLeft: '1px solid var(--ink-soft)', borderRight: '1px solid var(--ink-soft)', lineHeight: '38px' }}>{cur[field] || 0}</span>
+                          <button onClick={() => !napoliBloccato && changeCounter(pi, field, 1)} style={stepBtn} disabled={napoliBloccato}>+</button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )
             })}
