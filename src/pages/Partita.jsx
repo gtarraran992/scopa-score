@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -13,13 +13,28 @@ export default function Partita({ user }) {
   const [error, setError] = useState('')
   const [showReset, setShowReset] = useState(false)
   const [deletingMano, setDeletingMano] = useState(null)
+  const [showVittoria, setShowVittoria] = useState(false)
+  const eraConclusa = useRef(false)
 
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'partite', id), snap => {
-      if (snap.exists()) setPartita({ id: snap.id, ...snap.data() })
-    })
-    return unsub
-  }, [id])
+useEffect(() => {
+  const unsub = onSnapshot(doc(db, 'partite', id), snap => {
+    if (snap.exists()) {
+      const data = { id: snap.id, ...snap.data() }
+      setPartita(prev => {
+        if (prev === null) {
+          // Primo caricamento: se era già conclusa non mostrare il modale
+          eraConclusa.current = data.conclusa
+        } else if (data.conclusa && !eraConclusa.current) {
+          // È appena diventata conclusa
+          setShowVittoria(true)
+          eraConclusa.current = true
+        }
+        return data
+      })
+    }
+  })
+  return unsub
+}, [id])
 
   if (!partita) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -120,6 +135,23 @@ export default function Partita({ user }) {
         </Modal>
       )}
 
+      {/* Modale vittoria */}
+{showVittoria && partita.conclusa && winnerIdx !== -1 && (
+  <Modal>
+    <div style={{ fontSize: '48px', marginBottom: '12px' }}>🏆</div>
+    <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--gold)', marginBottom: '8px' }}>
+      {partita.players[winnerIdx].name} ha vinto!
+    </div>
+    <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>
+      {scores.map((s, i) => `${partita.players[i].name}: ${s}`).join(' · ')}
+    </div>
+    <div style={{ display: 'flex', gap: '10px' }}>
+      <button onClick={() => { setShowVittoria(false); navigate('/') }} style={btnCancel}>Home</button>
+      <button onClick={() => { setShowVittoria(false); navigate('/nuova-partita') }} style={btnConfirm}>Nuova partita</button>
+    </div>
+  </Modal>
+)}
+
       {/* Modale elimina mano */}
       {deletingMano !== null && (
         <Modal>
@@ -146,7 +178,7 @@ export default function Partita({ user }) {
 
       {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--ink-muted)', flexShrink: 0 }}>
-        {['punteggio', 'mano', 'storico'].map(t => (
+        {['punteggio', ...(partita.conclusa ? [] : ['mano']), 'storico'].map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             flex: 1, padding: '10px 4px', background: 'none', border: 'none',
             borderBottom: `2px solid ${tab === t ? 'var(--gold)' : 'transparent'}`,
