@@ -217,14 +217,22 @@ async function deleteAccount() {
   </button>
 </div>
 
-{/* Elimina account */}
-<button className="btn-ghost" onClick={deleteAccount} style={{ marginBottom: '12px', color: 'var(--danger)', borderColor: 'var(--danger)' }}>
-  Elimina account
-</button>
-
 {/* Logout */}
 <button className="btn-ghost" onClick={() => signOut(auth)} style={{ marginBottom: '20px' }}>
   Esci dall'account
+</button>
+
+<button
+  className="btn-ghost"
+  onClick={() => window.open('mailto:gtarraran992@gmail.com?subject=ScopaScore%20Feedback&body=Versione%3A%20' + version)}
+  style={{ marginBottom: '12px' }}
+>
+  📩 Segnala un problema
+</button>
+
+{/* Elimina account */}
+<button className="btn-ghost" onClick={deleteAccount} style={{ marginBottom: '12px', color: 'var(--danger)', borderColor: 'var(--danger)' }}>
+  Elimina account
 </button>
 
 {/* Versione */}
