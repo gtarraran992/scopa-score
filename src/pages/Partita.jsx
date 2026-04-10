@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { PUNTI, calcTotals } from '../config'
+import confetti from 'canvas-confetti'
 
 export default function Partita({ user }) {
   const { id } = useParams()
@@ -25,6 +26,7 @@ export default function Partita({ user }) {
             eraConclusa.current = data.conclusa
           } else if (data.conclusa && !eraConclusa.current) {
             setShowVittoria(true)
+            lanciaConfetti()
             eraConclusa.current = true
           }
           return data
@@ -64,6 +66,15 @@ export default function Partita({ user }) {
   ]
 
   const counterFields = ['scope', ...(opzioni.napoli !== false ? ['napoli'] : [])]
+
+  function lanciaConfetti() {
+   confetti({
+     particleCount: 150,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e']
+    })
+  }
 
   function isTakenByOther(pi, key) {
     return partita.players.some((_, otherPi) => otherPi !== pi && !!(current[otherPi]?.[key]))

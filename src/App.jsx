@@ -11,6 +11,7 @@ import Profilo from './pages/Profilo'
 import Classifica from './pages/Classifica'
 import Legal from './pages/Legal'
 import Onboarding from './pages/Onboarding'
+import OfflineBanner from './components/OfflineBanner'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
@@ -26,7 +27,9 @@ export default function App() {
     </div>
   )
 
-  return (
+return (
+  <div style={{ height: '100%' }}>
+    <OfflineBanner />
     <Routes>
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
       <Route path="/" element={
@@ -49,5 +52,6 @@ export default function App() {
       <Route path="/privacy" element={<Legal page="privacy" />} />
       <Route path="/termini" element={<Legal page="termini" />} />
     </Routes>
-  )
+  </div>
+)
 }
