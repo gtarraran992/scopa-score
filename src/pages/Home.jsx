@@ -85,7 +85,9 @@ function PartitaCard({ partita, user, onClick }) {
           {partita.conclusa ? 'Conclusa' : `Mano ${(partita.mani || []).length + 1}`}
         </span>
         <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>
-          Target: {partita.target}
+         {partita.createdAt?.toDate
+          ? partita.createdAt.toDate().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+          : ''}
         </span>
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
