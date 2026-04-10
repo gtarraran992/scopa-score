@@ -8,6 +8,7 @@ import NuovaPartita from './pages/NuovaPartita'
 import Partita from './pages/Partita'
 import Amici from './pages/Amici'
 import Profilo from './pages/Profilo'
+import Classifica from './pages/Classifica'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/partita/:id" element={user ? <Partita user={user} /> : <Navigate to="/login" />} />
       <Route path="/amici" element={user ? <Amici user={user} /> : <Navigate to="/login" />} />
       <Route path="/profilo" element={user ? <Profilo user={user} /> : <Navigate to="/login" />} />
+      <Route path="/classifica" element={user ? <Classifica user={user} /> : <Navigate to="/login" />} />
     </Routes>
   )
 }

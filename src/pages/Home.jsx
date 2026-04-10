@@ -33,6 +33,7 @@ export default function Home({ user }) {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>Ciao, {user.displayName || user.email}</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => navigate('/classifica')} style={iconBtn}>🏆</button>
           <button onClick={() => navigate('/profilo')} style={iconBtn}>👤</button>
           <button onClick={() => navigate('/amici')} style={iconBtn}>👥</button>
           <button onClick={() => signOut(auth)} style={iconBtn}>↩</button>
