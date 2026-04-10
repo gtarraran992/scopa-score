@@ -61,13 +61,14 @@ useEffect(() => {
     })
   }
 
-  function changeCounter(pi, field, delta) {
-    setCurrent(c => {
-      const cur = { ...(c[pi] || {}) }
-      cur[field] = Math.max(0, (cur[field] || 0) + delta)
-      return { ...c, [pi]: cur }
-    })
-  }
+function changeCounter(pi, field, delta) {
+  const max = field === 'napoli' ? 10 : field === 'scope' ? 18 : 999
+  setCurrent(c => {
+    const cur = { ...(c[pi] || {}) }
+    cur[field] = Math.min(max, Math.max(0, (cur[field] || 0) + delta))
+    return { ...c, [pi]: cur }
+  })
+}
 
   async function confirmMano() {
     const obbligatori = ['settebello', 'rebello']
