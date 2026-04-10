@@ -83,3 +83,17 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 }
 
 .btn-ghost:active { border-color: var(--gold); color: var(--gold); }
+
+[data-theme="green"] {
+  --ink: #1a3a2a;
+  --ink-soft: #1f4a35;
+  --ink-muted: #2a5c42;
+  --cream: #f5f0e8;
+  --gold: #c9963a;
+  --gold-light: #e8b84b;
+  --text-on-dark: #f0ebe0;
+  --text-muted: #9db8a8;
+  --text-faint: #6b8a78;
+  --success: #4caf6e;
+  --danger: #e74c3c;
+}

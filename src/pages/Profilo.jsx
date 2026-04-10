@@ -13,6 +13,13 @@ export default function Profilo({ user }) {
   const [saved, setSaved] = useState(false)
   const [stats, setStats] = useState(null)
   const [storico, setStorico] = useState([])
+  const [theme, setTheme] = useState(localStorage.getItem('scopa-theme') || 'dark')
+
+  function changeTheme(t) {
+  setTheme(t)
+  localStorage.setItem('scopa-theme', t)
+  document.documentElement.setAttribute('data-theme', t)
+}
 
   useEffect(() => {
     async function loadData() {
@@ -240,6 +247,30 @@ export default function Profilo({ user }) {
           </div>
         </>
       )}
+
+<div style={sectionTitle}>Tema</div>
+<div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+  {[
+    { id: 'dark', label: '🌑 Dark', color: '#1a1a2e' },
+    { id: 'green', label: '🎰 Tavolo', color: '#1a3a2a' },
+  ].map(t => (
+    <button
+      key={t.id}
+      onClick={() => changeTheme(t.id)}
+      style={{
+        flex: 1, padding: '14px 10px',
+        background: t.color,
+        border: `2px solid ${theme === t.id ? 'var(--gold)' : 'var(--ink-muted)'}`,
+        borderRadius: 'var(--radius-lg)',
+        color: theme === t.id ? 'var(--gold)' : 'var(--text-muted)',
+        fontSize: '13px', fontWeight: theme === t.id ? '500' : '400',
+        cursor: 'pointer', transition: 'all 0.2s'
+      }}
+    >
+      {t.label}
+    </button>
+  ))}
+</div>
 
       {/* Legal */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
