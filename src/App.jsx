@@ -36,6 +36,11 @@ export default function App() {
           : <Navigate to="/onboarding" />
           : <Navigate to="/login" />
       } />
+      <Route path="/onboarding" element={
+        user
+        ? <Onboarding />
+        : <Navigate to="/login" />
+      } />
       <Route path="/nuova-partita" element={user ? <NuovaPartita user={user} /> : <Navigate to="/login" />} />
       <Route path="/partita/:id" element={user ? <Partita user={user} /> : <Navigate to="/login" />} />
       <Route path="/amici" element={user ? <Amici user={user} /> : <Navigate to="/login" />} />
@@ -43,7 +48,6 @@ export default function App() {
       <Route path="/classifica" element={user ? <Classifica user={user} /> : <Navigate to="/login" />} />
       <Route path="/privacy" element={<Legal page="privacy" />} />
       <Route path="/termini" element={<Legal page="termini" />} />
-      <Route path="/onboarding" element={<Onboarding />} />
     </Routes>
   )
 }

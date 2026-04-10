@@ -28,10 +28,10 @@ export default function Onboarding() {
   const navigate = useNavigate()
   const [slide, setSlide] = useState(0)
 
-  function finish() {
-    localStorage.setItem('onboarding-done', 'true')
-    navigate('/')
-  }
+function finish() {
+  localStorage.setItem('onboarding-done', 'true')
+  window.location.href = '/'  // invece di navigate('/')
+}
 
   function next() {
     if (slide < SLIDES.length - 1) setSlide(s => s + 1)
