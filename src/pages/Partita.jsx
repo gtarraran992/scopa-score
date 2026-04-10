@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { PUNTI, calcTotals } from '../config'
 
@@ -16,25 +16,23 @@ export default function Partita({ user }) {
   const [showVittoria, setShowVittoria] = useState(false)
   const eraConclusa = useRef(false)
 
-useEffect(() => {
-  const unsub = onSnapshot(doc(db, 'partite', id), snap => {
-    if (snap.exists()) {
-      const data = { id: snap.id, ...snap.data() }
-      setPartita(prev => {
-        if (prev === null) {
-          // Primo caricamento: se era già conclusa non mostrare il modale
-          eraConclusa.current = data.conclusa
-        } else if (data.conclusa && !eraConclusa.current) {
-          // È appena diventata conclusa
-          setShowVittoria(true)
-          eraConclusa.current = true
-        }
-        return data
-      })
-    }
-  })
-  return unsub
-}, [id])
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'partite', id), snap => {
+      if (snap.exists()) {
+        const data = { id: snap.id, ...snap.data() }
+        setPartita(prev => {
+          if (prev === null) {
+            eraConclusa.current = data.conclusa
+          } else if (data.conclusa && !eraConclusa.current) {
+            setShowVittoria(true)
+            eraConclusa.current = true
+          }
+          return data
+        })
+      }
+    })
+    return unsub
+  }, [id])
 
   if (!partita) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -42,12 +40,30 @@ useEffect(() => {
     </div>
   )
 
+  const opzioni = partita.opzioni || { rebello: true, napoli: true }
   const mani = partita.mani || []
   const totals = calcTotals(partita.players, mani)
   const scores = totals.map(t => t.total)
   const maxScore = Math.max(...scores)
   const hasWinner = maxScore >= partita.target && mani.length > 0 && scores.filter(s => s === maxScore).length === 1
   const winnerIdx = hasWinner ? scores.indexOf(maxScore) : -1
+
+  const puntiAttivi = PUNTI.filter(pt => {
+    if (pt.key === 'rebello' && !opzioni.rebello) return false
+    return true
+  })
+
+  const pills = [
+    { key: 'carte', label: 'Carte' },
+    { key: 'oro', label: 'Ori' },
+    { key: 'settebello', label: '7♦' },
+    ...(opzioni.rebello ? [{ key: 'rebello', label: 'R♦' }] : []),
+    { key: 'primiera', label: 'Prim.' },
+    { key: 'scope', label: 'Scope' },
+    ...(opzioni.napoli !== false ? [{ key: 'napoli', label: 'Napoli' }] : []),
+  ]
+
+  const counterFields = ['scope', ...(opzioni.napoli !== false ? ['napoli'] : [])]
 
   function isTakenByOther(pi, key) {
     return partita.players.some((_, otherPi) => otherPi !== pi && !!(current[otherPi]?.[key]))
@@ -61,17 +77,17 @@ useEffect(() => {
     })
   }
 
-function changeCounter(pi, field, delta) {
-  const max = field === 'napoli' ? 10 : field === 'scope' ? 18 : 999
-  setCurrent(c => {
-    const cur = { ...(c[pi] || {}) }
-    cur[field] = Math.min(max, Math.max(0, (cur[field] || 0) + delta))
-    return { ...c, [pi]: cur }
-  })
-}
+  function changeCounter(pi, field, delta) {
+    const max = field === 'napoli' ? 10 : field === 'scope' ? 18 : 999
+    setCurrent(c => {
+      const cur = { ...(c[pi] || {}) }
+      cur[field] = Math.min(max, Math.max(0, (cur[field] || 0) + delta))
+      return { ...c, [pi]: cur }
+    })
+  }
 
   async function confirmMano() {
-    const obbligatori = ['settebello', 'rebello']
+    const obbligatori = ['settebello', ...(opzioni.rebello ? ['rebello'] : [])]
     for (const key of obbligatori) {
       const assegnato = partita.players.some((_, pi) => !!(current[pi]?.[key]))
       if (!assegnato) {
@@ -83,7 +99,9 @@ function changeCounter(pi, field, delta) {
     const mano = {}
     partita.players.forEach((_, pi) => {
       const cur = current[pi] || {}
-      const total = PUNTI.reduce((s, pt) => s + (cur[pt.key] || 0), 0) + (cur.scope || 0) + (cur.napoli || 0)
+      const total = puntiAttivi.reduce((s, pt) => s + (cur[pt.key] || 0), 0)
+        + (cur.scope || 0)
+        + (opzioni.napoli !== false ? (cur.napoli || 0) : 0)
       mano[pi] = { ...cur, total }
     })
     const nuoveMani = [...mani, mano]
@@ -115,7 +133,6 @@ function changeCounter(pi, field, delta) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingTop: 'var(--safe-top)' }}>
 
-      {/* Modale errore */}
       {error && (
         <Modal>
           <div style={{ fontSize: '28px', marginBottom: '12px' }}>⚠️</div>
@@ -124,7 +141,6 @@ function changeCounter(pi, field, delta) {
         </Modal>
       )}
 
-      {/* Modale reset */}
       {showReset && (
         <Modal>
           <div style={{ fontSize: '28px', marginBottom: '12px' }}>🃏</div>
@@ -136,24 +152,22 @@ function changeCounter(pi, field, delta) {
         </Modal>
       )}
 
-      {/* Modale vittoria */}
-{showVittoria && partita.conclusa && winnerIdx !== -1 && (
-  <Modal>
-    <div style={{ fontSize: '48px', marginBottom: '12px' }}>🏆</div>
-    <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--gold)', marginBottom: '8px' }}>
-      {partita.players[winnerIdx].name} ha vinto!
-    </div>
-    <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>
-      {scores.map((s, i) => `${partita.players[i].name}: ${s}`).join(' · ')}
-    </div>
-    <div style={{ display: 'flex', gap: '10px' }}>
-      <button onClick={() => { setShowVittoria(false); navigate('/') }} style={btnCancel}>Home</button>
-      <button onClick={() => { setShowVittoria(false); navigate('/nuova-partita') }} style={btnConfirm}>Nuova partita</button>
-    </div>
-  </Modal>
-)}
+      {showVittoria && partita.conclusa && winnerIdx !== -1 && (
+        <Modal>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>🏆</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--gold)', marginBottom: '8px' }}>
+            {partita.players[winnerIdx].name} ha vinto!
+          </div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>
+            {scores.map((s, i) => `${partita.players[i].name}: ${s}`).join(' · ')}
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={() => { setShowVittoria(false); navigate('/') }} style={btnCancel}>Home</button>
+            <button onClick={() => { setShowVittoria(false); navigate('/nuova-partita') }} style={btnConfirm}>Nuova partita</button>
+          </div>
+        </Modal>
+      )}
 
-      {/* Modale elimina mano */}
       {deletingMano !== null && (
         <Modal>
           <div style={{ fontSize: '28px', marginBottom: '12px' }}>🗑️</div>
@@ -165,7 +179,6 @@ function changeCounter(pi, field, delta) {
         </Modal>
       )}
 
-      {/* Topbar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 16px', borderBottom: '1px solid var(--ink-muted)', flexShrink: 0
@@ -177,7 +190,6 @@ function changeCounter(pi, field, delta) {
         <button onClick={() => setShowReset(true)} style={backBtn}>↺</button>
       </div>
 
-      {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--ink-muted)', flexShrink: 0 }}>
         {['punteggio', ...(partita.conclusa ? [] : ['mano']), 'storico'].map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
@@ -192,10 +204,8 @@ function changeCounter(pi, field, delta) {
         ))}
       </div>
 
-      {/* Content */}
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 16px calc(16px + var(--safe-bottom))' }}>
 
-        {/* TAB PUNTEGGIO */}
         {tab === 'punteggio' && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: partita.players.length > 2 ? '1fr 1fr' : '1fr', gap: '12px', marginBottom: '16px' }}>
@@ -220,14 +230,9 @@ function changeCounter(pi, field, delta) {
                       <div style={{ height: '100%', width: `${pct}%`, background: isWinner ? 'var(--success)' : 'linear-gradient(90deg, var(--gold), var(--gold-light))', borderRadius: '2px', transition: 'width 0.4s ease' }} />
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                      {[
-                        { key: 'carte', label: 'Carte' }, { key: 'oro', label: 'Ori' },
-                        { key: 'settebello', label: '7♦' }, { key: 'rebello', label: 'R♦' },
-                        { key: 'primiera', label: 'Prim.' }, { key: 'scope', label: 'Scope' },
-                        { key: 'napoli', label: 'Napoli' }
-                      ].map(pill => (
+                      {pills.map(pill => (
                         <div key={pill.key} style={{ background: 'var(--ink-muted)', borderRadius: '20px', padding: '3px 9px', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '4px' }}>
-                          {pill.label} <b style={{ color: 'var(--cream)', fontWeight: '500' }}>{t[pill.key]}</b>
+                          {pill.label} <b style={{ color: 'var(--cream)', fontWeight: '500' }}>{t[pill.key] || 0}</b>
                         </div>
                       ))}
                     </div>
@@ -241,7 +246,6 @@ function changeCounter(pi, field, delta) {
           </>
         )}
 
-        {/* TAB NUOVA MANO */}
         {tab === 'mano' && (
           <div className="card">
             <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--ink-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -255,7 +259,7 @@ function changeCounter(pi, field, delta) {
                 <div key={pi} style={{ padding: '14px 18px', borderBottom: '1px solid var(--ink-muted)' }}>
                   <div style={{ fontSize: '12px', fontWeight: '500', letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px' }}>{p.name}</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                    {PUNTI.map(pt => {
+                    {puntiAttivi.map(pt => {
                       const on = !!cur[pt.key]
                       const disabled = !on && isTakenByOther(pi, pt.key)
                       return (
@@ -281,7 +285,7 @@ function changeCounter(pi, field, delta) {
                       )
                     })}
                   </div>
-                  {['scope', 'napoli'].map(field => (
+                  {counterFields.map(field => (
                     <div key={field} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' }}>
                       <span style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{field}</span>
                       <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
@@ -301,7 +305,6 @@ function changeCounter(pi, field, delta) {
           </div>
         )}
 
-        {/* TAB STORICO */}
         {tab === 'storico' && (
           mani.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-faint)' }}>

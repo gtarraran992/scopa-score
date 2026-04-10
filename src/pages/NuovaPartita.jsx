@@ -13,6 +13,10 @@ export default function NuovaPartita({ user }) {
   const [target, setTarget] = useState(DEFAULT_TARGET)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [opzioni, setOpzioni] = useState({
+   rebello: true,
+   napoli: true,
+  })
 
   function updateName(i, val) {
     setPlayers(ps => ps.map((p, pi) => pi === i ? { ...p, name: val } : p))
@@ -37,6 +41,7 @@ export default function NuovaPartita({ user }) {
         players: players.map(p => ({ name: p.name.trim() })),
         uids: [user.uid],
         target,
+        opzioni,
         mani: [],
         conclusa: false,
         createdAt: serverTimestamp(),
@@ -111,6 +116,41 @@ export default function NuovaPartita({ user }) {
           </div>
         </div>
       </div>
+
+      {/* Opzioni variante */}
+<div style={sectionTitle}>Variante</div>
+<div className="card" style={{ marginBottom: '28px' }}>
+  {[
+    { key: 'rebello', label: 'Re bello', desc: 'Il re di denari vale 1 punto' },
+    { key: 'napoli', label: 'Napoli', desc: 'Sequenza di denari vale punti extra' },
+  ].map((opt, i) => (
+    <div key={opt.key} style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '14px 16px',
+      borderBottom: i === 0 ? '1px solid var(--ink-muted)' : 'none'
+    }}>
+      <div>
+        <div style={{ fontSize: '15px', color: 'var(--cream)' }}>{opt.label}</div>
+        <div style={{ fontSize: '12px', color: 'var(--text-faint)', marginTop: '2px' }}>{opt.desc}</div>
+      </div>
+      <div
+        onClick={() => setOpzioni(o => ({ ...o, [opt.key]: !o[opt.key] }))}
+        style={{
+          width: '44px', height: '26px', borderRadius: '13px',
+          background: opzioni[opt.key] ? 'var(--gold)' : 'var(--ink-muted)',
+          position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0
+        }}
+      >
+        <div style={{
+          position: 'absolute', top: '3px',
+          left: opzioni[opt.key] ? '21px' : '3px',
+          width: '20px', height: '20px', borderRadius: '50%',
+          background: 'white', transition: 'left 0.2s'
+        }} />
+      </div>
+    </div>
+  ))}
+</div>
 
       {error && (
         <div style={{ color: 'var(--gold)', fontSize: '13px', marginBottom: '16px', textAlign: 'center' }}>
