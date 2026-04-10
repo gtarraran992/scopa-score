@@ -5,6 +5,9 @@ import { db, auth } from '../firebase'
 import { signOut } from 'firebase/auth'
 import { calcTotals } from '../config'
 import { updateProfile } from 'firebase/auth'
+import { version } from '../../package.json'
+import { deleteUser } from 'firebase/auth'
+import { deleteDoc } from 'firebase/firestore'
 
 export default function Profilo({ user }) {
   const navigate = useNavigate()
@@ -74,6 +77,16 @@ async function saveName() {
   setSaving(false)
   setSaved(true)
   setTimeout(() => setSaved(false), 2000)
+}
+
+async function deleteAccount() {
+  if (!window.confirm('Sei sicuro? Tutti i tuoi dati verranno eliminati definitivamente.')) return
+  try {
+    await deleteDoc(doc(db, 'users', user.uid))
+    await deleteUser(auth.currentUser)
+  } catch (e) {
+    alert('Errore. Riprova o esegui di nuovo il login prima di eliminare l\'account.')
+  }
 }
 
   const pct = stats?.totale > 0 ? Math.round((stats.vinte / stats.totale) * 100) : 0
@@ -194,10 +207,30 @@ async function saveName() {
         </>
       )}
 
-      {/* Logout */}
-      <button className="btn-ghost" onClick={() => signOut(auth)} style={{ marginTop: '8px' }}>
-        Esci dall'account
-      </button>
+{/* Legal + versione */}
+<div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+  <button className="btn-ghost" onClick={() => navigate('/privacy')} style={{ fontSize: '13px' }}>
+    Privacy Policy
+  </button>
+  <button className="btn-ghost" onClick={() => navigate('/termini')} style={{ fontSize: '13px' }}>
+    Termini di Servizio
+  </button>
+</div>
+
+{/* Elimina account */}
+<button className="btn-ghost" onClick={deleteAccount} style={{ marginBottom: '12px', color: 'var(--danger)', borderColor: 'var(--danger)' }}>
+  Elimina account
+</button>
+
+{/* Logout */}
+<button className="btn-ghost" onClick={() => signOut(auth)} style={{ marginBottom: '20px' }}>
+  Esci dall'account
+</button>
+
+{/* Versione */}
+<div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-faint)' }}>
+  ScopaScore v{version}
+</div>
     </div>
   )
 }
