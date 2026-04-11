@@ -137,6 +137,10 @@ export default function Partita({ user, isGuest }) {
         return
       }
     }
+    // Vibrazione feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(50)
+    }
     setError('')
     const mano = {}
     partita.players.forEach((_, pi) => {
