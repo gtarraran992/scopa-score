@@ -3,9 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { PUNTI, calcTotals } from '../config'
+import { getPartitaLocale, savePartitaLocale } from '../localDB'
 import confetti from 'canvas-confetti'
 
-export default function Partita({ user }) {
+export default function Partita({ user, isGuest }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const [partita, setPartita] = useState(null)
@@ -18,6 +19,17 @@ export default function Partita({ user }) {
   const eraConclusa = useRef(false)
 
   useEffect(() => {
+    if (isGuest) {
+      // Modalità ospite — carica da localStorage
+      const p = getPartitaLocale(id)
+      if (p) {
+        eraConclusa.current = p.conclusa
+        setPartita(p)
+      }
+      return
+    }
+
+    // Modalità utente — carica da Firestore
     const unsub = onSnapshot(doc(db, 'partite', id), snap => {
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() }
@@ -26,7 +38,12 @@ export default function Partita({ user }) {
             eraConclusa.current = data.conclusa
           } else if (data.conclusa && !eraConclusa.current) {
             setShowVittoria(true)
-            lanciaConfetti()
+            confetti({
+              particleCount: 150,
+              spread: 80,
+              origin: { y: 0.6 },
+              colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e']
+            })
             eraConclusa.current = true
           }
           return data
@@ -34,7 +51,14 @@ export default function Partita({ user }) {
       }
     })
     return unsub
-  }, [id])
+  }, [id, isGuest])
+
+  function updatePartitaLocale(updates) {
+    const updated = { ...partita, ...updates }
+    savePartitaLocale(updated)
+    setPartita(updated)
+    return updated
+  }
 
   if (!partita) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -67,15 +91,6 @@ export default function Partita({ user }) {
 
   const counterFields = ['scope', ...(opzioni.napoli !== false ? ['napoli'] : [])]
 
-  function lanciaConfetti() {
-   confetti({
-     particleCount: 150,
-      spread: 80,
-      origin: { y: 0.6 },
-      colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e']
-    })
-  }
-
   function isTakenByOther(pi, key) {
     return partita.players.some((_, otherPi) => otherPi !== pi && !!(current[otherPi]?.[key]))
   }
@@ -94,13 +109,10 @@ export default function Partita({ user }) {
       const cur = { ...(c[pi] || {}) }
       const current_val = cur[field] || 0
       const newVal = current_val + delta
-
       if (field === 'napoli') {
         if (current_val === 0 && delta > 0) {
-          // Parte da 3 quando si attiva
           cur[field] = 3
         } else if (newVal < 3) {
-          // Sotto 3 si azzera (toggle off)
           cur[field] = 0
         } else {
           cur[field] = Math.min(max, newVal)
@@ -108,12 +120,10 @@ export default function Partita({ user }) {
       } else {
         cur[field] = Math.min(max, Math.max(0, newVal))
       }
-
       return { ...c, [pi]: cur }
     })
   }
 
-  // Napoli è preso da un altro giocatore
   function napoliPresoDA(pi) {
     return partita.players.some((_, otherPi) => otherPi !== pi && (current[otherPi]?.napoli || 0) > 0)
   }
@@ -141,23 +151,44 @@ export default function Partita({ user }) {
     const nuovoMax = Math.max(...nuoviScores)
     const conclusa = nuovoMax >= partita.target && nuoviScores.filter(s => s === nuovoMax).length === 1
 
-    await updateDoc(doc(db, 'partite', id), {
-      mani: nuoveMani,
-      conclusa,
-      ...(conclusa ? { conclusaAt: serverTimestamp() } : {})
-    })
+    if (isGuest) {
+      const updated = updatePartitaLocale({ mani: nuoveMani, conclusa })
+      if (conclusa) {
+        setShowVittoria(true)
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e']
+        })
+      }
+    } else {
+      await updateDoc(doc(db, 'partite', id), {
+        mani: nuoveMani,
+        conclusa,
+        ...(conclusa ? { conclusaAt: serverTimestamp() } : {})
+      })
+    }
     setCurrent({})
     setTab('punteggio')
   }
 
   async function deleteMano(mi) {
     const nuoveMani = mani.filter((_, i) => i !== mi)
-    await updateDoc(doc(db, 'partite', id), { mani: nuoveMani, conclusa: false })
+    if (isGuest) {
+      updatePartitaLocale({ mani: nuoveMani, conclusa: false })
+    } else {
+      await updateDoc(doc(db, 'partite', id), { mani: nuoveMani, conclusa: false })
+    }
     setDeletingMano(null)
   }
 
   async function resetPartita() {
-    await updateDoc(doc(db, 'partite', id), { mani: [], conclusa: false })
+    if (isGuest) {
+      updatePartitaLocale({ mani: [], conclusa: false })
+    } else {
+      await updateDoc(doc(db, 'partite', id), { mani: [], conclusa: false })
+    }
     setCurrent({})
     setShowReset(false)
   }
@@ -193,9 +224,16 @@ export default function Partita({ user }) {
           <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>
             {scores.map((s, i) => `${partita.players[i].name}: ${s}`).join(' · ')}
           </div>
+          {isGuest && (
+            <div style={{ fontSize: '12px', color: 'var(--gold)', marginBottom: '16px', padding: '10px', background: 'rgba(201,150,58,0.1)', borderRadius: 'var(--radius-md)' }}>
+              Registrati per salvare le tue partite nel cloud!
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={() => { setShowVittoria(false); navigate('/') }} style={btnCancel}>Home</button>
-            <button onClick={() => { setShowVittoria(false); navigate('/nuova-partita') }} style={btnConfirm}>Nuova partita</button>
+            <button onClick={() => { setShowVittoria(false); navigate(isGuest ? '/login' : '/nuova-partita') }} style={btnConfirm}>
+              {isGuest ? 'Registrati' : 'Nuova partita'}
+            </button>
           </div>
         </Modal>
       )}
@@ -324,9 +362,7 @@ export default function Partita({ user }) {
                       <div key={field} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', opacity: napoliBloccato ? 0.3 : 1 }}>
                         <div>
                           <span style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{field}</span>
-                          {isNapoli && (
-                            <span style={{ fontSize: '11px', color: 'var(--text-faint)', marginLeft: '6px' }}>min. 3</span>
-                          )}
+                          {isNapoli && <span style={{ fontSize: '11px', color: 'var(--text-faint)', marginLeft: '6px' }}>min. 3</span>}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                           <button onClick={() => !napoliBloccato && changeCounter(pi, field, -1)} style={stepBtn} disabled={napoliBloccato}>−</button>

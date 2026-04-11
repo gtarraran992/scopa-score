@@ -4,13 +4,21 @@ import { collection, query, where, orderBy, onSnapshot, deleteDoc, doc } from 'f
 import { signOut } from 'firebase/auth'
 import { db, auth } from '../firebase'
 import { calcTotals } from '../config'
+import { getPartiteLocali, deletePartitaLocale } from '../localDB'
 
-export default function Home({ user }) {
+export default function Home({ user, isGuest }) {
   const [partite, setPartite] = useState([])
   const [deletingId, setDeletingId] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
+    if (isGuest) {
+      // Modalità ospite — carica da localStorage
+      setPartite(getPartiteLocali())
+      return
+    }
+
+    // Modalità utente — carica da Firestore
     const q = query(
       collection(db, 'partite'),
       where('uids', 'array-contains', user.uid),
@@ -20,10 +28,15 @@ export default function Home({ user }) {
       setPartite(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
     return unsub
-  }, [user.uid])
+  }, [user, isGuest])
 
   async function confirmDelete() {
-    await deleteDoc(doc(db, 'partite', deletingId))
+    if (isGuest) {
+      deletePartitaLocale(deletingId)
+      setPartite(getPartiteLocali())
+    } else {
+      await deleteDoc(doc(db, 'partite', deletingId))
+    }
     setDeletingId(null)
   }
 
@@ -33,13 +46,13 @@ export default function Home({ user }) {
   return (
     <div className="page">
 
-      {/* Modale elimina partita */}
+      {/* Modale elimina */}
       {deletingId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ background: '#242438', border: '1px solid var(--gold)', borderRadius: '16px', padding: '28px 24px', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
             <div style={{ fontSize: '28px', marginBottom: '12px' }}>🗑️</div>
             <div style={{ color: '#f0ebe0', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>
-              Eliminare questa partita? L'azione è irreversibile.
+              Eliminare questa partita?
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => setDeletingId(null)} style={btnCancel}>Annulla</button>
@@ -53,15 +66,41 @@ export default function Home({ user }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--gold)' }}>♠ Scopa</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>Ciao, {user.displayName || user.email}</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
+            {isGuest ? 'Modalità ospite' : `Ciao, ${user.displayName || user.email}`}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => navigate('/classifica')} style={iconBtn}>🏆</button>
-          <button onClick={() => navigate('/profilo')} style={iconBtn}>👤</button>
-          <button onClick={() => navigate('/amici')} style={iconBtn}>👥</button>
-          <button onClick={() => signOut(auth)} style={iconBtn}>↩</button>
+          {!isGuest && <button onClick={() => navigate('/classifica')} style={iconBtn}>🏆</button>}
+          {!isGuest && <button onClick={() => navigate('/profilo')} style={iconBtn}>👤</button>}
+          {!isGuest && <button onClick={() => navigate('/amici')} style={iconBtn}>👥</button>}
+          {isGuest
+            ? <button onClick={() => navigate('/login')} style={{ ...iconBtn, color: 'var(--gold)', borderColor: 'var(--gold)', fontSize: '12px', padding: '8px 12px' }}>Accedi</button>
+            : <button onClick={() => signOut(auth)} style={iconBtn}>↩</button>
+          }
         </div>
       </div>
+
+      {/* Banner ospite */}
+      {isGuest && (
+        <div style={{
+          background: 'rgba(201,150,58,0.1)', border: '1px solid var(--gold)',
+          borderRadius: 'var(--radius-lg)', padding: '12px 16px',
+          marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px'
+        }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+            Stai giocando come ospite. Registrati per salvare le partite nel cloud e accedere alle classifiche.
+          </span>
+          <button onClick={() => navigate('/login')} style={{
+            background: 'linear-gradient(135deg, var(--gold), var(--gold-light))',
+            border: 'none', borderRadius: 'var(--radius-md)',
+            padding: '8px 14px', color: 'var(--ink)',
+            fontSize: '12px', fontWeight: '500', flexShrink: 0, cursor: 'pointer'
+          }}>
+            Registrati
+          </button>
+        </div>
+      )}
 
       {/* Nuova partita */}
       <button className="btn-gold" onClick={() => navigate('/nuova-partita')} style={{ marginBottom: '28px' }}>
@@ -76,7 +115,6 @@ export default function Home({ user }) {
             <PartitaCard
               key={p.id}
               partita={p}
-              user={user}
               onClick={() => navigate(`/partita/${p.id}`)}
               onDelete={e => { e.stopPropagation(); setDeletingId(p.id) }}
             />
@@ -92,7 +130,6 @@ export default function Home({ user }) {
             <PartitaCard
               key={p.id}
               partita={p}
-              user={user}
               onClick={() => navigate(`/partita/${p.id}`)}
               onDelete={e => { e.stopPropagation(); setDeletingId(p.id) }}
             />
@@ -111,12 +148,18 @@ export default function Home({ user }) {
   )
 }
 
-function PartitaCard({ partita, user, onClick, onDelete }) {
+function PartitaCard({ partita, onClick, onDelete }) {
   const totals = calcTotals(partita.players, partita.mani || [])
   const scores = totals.map(t => t.total)
   const maxScore = Math.max(...scores)
   const winnerIdx = partita.conclusa && scores.filter(s => s === maxScore).length === 1
     ? scores.indexOf(maxScore) : -1
+
+  const data = partita.createdAt?.toDate
+    ? partita.createdAt.toDate().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+    : partita.createdAt
+      ? new Date(partita.createdAt).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+      : ''
 
   return (
     <div className="card" onClick={onClick} style={{ marginBottom: '12px', padding: '16px', cursor: 'pointer' }}>
@@ -125,17 +168,8 @@ function PartitaCard({ partita, user, onClick, onDelete }) {
           {partita.conclusa ? 'Conclusa' : `Mano ${(partita.mani || []).length + 1}`}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>
-            {partita.createdAt?.toDate
-              ? partita.createdAt.toDate().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
-              : ''}
-          </span>
-          <button
-            onClick={onDelete}
-            style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: '16px', padding: '2px 4px', lineHeight: 1 }}
-          >
-            ✕
-          </button>
+          <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{data}</span>
+          <button onClick={onDelete} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: '16px', padding: '2px 4px', lineHeight: 1 }}>✕</button>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>

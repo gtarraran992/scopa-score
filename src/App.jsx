@@ -27,31 +27,27 @@ export default function App() {
     </div>
   )
 
-return (
-  <div style={{ height: '100%' }}>
-    <OfflineBanner />
-    <Routes>
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-      <Route path="/" element={
-        user
-        ? localStorage.getItem('onboarding-done')
-          ? <Home user={user} />
-          : <Navigate to="/onboarding" />
-          : <Navigate to="/login" />
-      } />
-      <Route path="/onboarding" element={
-        user
-        ? <Onboarding />
-        : <Navigate to="/login" />
-      } />
-      <Route path="/nuova-partita" element={user ? <NuovaPartita user={user} /> : <Navigate to="/login" />} />
-      <Route path="/partita/:id" element={user ? <Partita user={user} /> : <Navigate to="/login" />} />
-      <Route path="/amici" element={user ? <Amici user={user} /> : <Navigate to="/login" />} />
-      <Route path="/profilo" element={user ? <Profilo user={user} /> : <Navigate to="/login" />} />
-      <Route path="/classifica" element={user ? <Classifica user={user} /> : <Navigate to="/login" />} />
-      <Route path="/privacy" element={<Legal page="privacy" />} />
-      <Route path="/termini" element={<Legal page="termini" />} />
-    </Routes>
-  </div>
-)
+  const isGuest = !user
+
+  return (
+    <div style={{ height: '100%' }}>
+      <OfflineBanner />
+      <Routes>
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+        <Route path="/" element={
+          localStorage.getItem('onboarding-done')
+            ? <Home user={user} isGuest={isGuest} />
+            : <Navigate to="/onboarding" />
+        } />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/nuova-partita" element={<NuovaPartita user={user} isGuest={isGuest} />} />
+        <Route path="/partita/:id" element={<Partita user={user} isGuest={isGuest} />} />
+        <Route path="/amici" element={user ? <Amici user={user} /> : <Navigate to="/login" />} />
+        <Route path="/profilo" element={user ? <Profilo user={user} /> : <Navigate to="/login" />} />
+        <Route path="/classifica" element={user ? <Classifica user={user} /> : <Navigate to="/login" />} />
+        <Route path="/privacy" element={<Legal page="privacy" />} />
+        <Route path="/termini" element={<Legal page="termini" />} />
+      </Routes>
+    </div>
+  )
 }

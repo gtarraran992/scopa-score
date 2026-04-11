@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc, getDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, googleProvider, db } from '../firebase'
+import { getPartiteLocali, clearPartiteLocali } from '../localDB'
 
 async function saveUserToDb(user) {
   const ref = doc(db, 'users', user.uid)
@@ -17,6 +18,26 @@ async function saveUserToDb(user) {
   }
 }
 
+async function migraPartiteLocali(user) {
+  const partite = getPartiteLocali()
+  if (partite.length === 0) return
+
+  for (const p of partite) {
+    await addDoc(collection(db, 'partite'), {
+      players: p.players,
+      uids: [user.uid],
+      target: p.target,
+      opzioni: p.opzioni || { rebello: true, napoli: true },
+      mani: p.mani || [],
+      conclusa: p.conclusa || false,
+      createdAt: serverTimestamp(),
+      createdBy: user.uid,
+    })
+  }
+
+  clearPartiteLocali()
+}
+
 export default function Login() {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -30,6 +51,7 @@ export default function Login() {
     try {
       const res = await signInWithPopup(auth, googleProvider)
       await saveUserToDb(res.user)
+      await migraPartiteLocali(res.user)
     } catch (e) {
       setError('Errore con Google. Riprova.')
     }
@@ -49,8 +71,10 @@ export default function Login() {
           friends: [],
           createdAt: new Date(),
         })
+        await migraPartiteLocali(res.user)
       } else {
-        await signInWithEmailAndPassword(auth, email, password)
+        const res = await signInWithEmailAndPassword(auth, email, password)
+        await migraPartiteLocali(res.user)
       }
     } catch (e) {
       if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
@@ -79,6 +103,15 @@ export default function Login() {
       </div>
 
       <div style={{ width: '100%', maxWidth: '360px' }}>
+
+        {/* Bottone torna indietro se viene da ospite */}
+        <button onClick={() => window.history.back()} style={{
+          background: 'none', border: 'none', color: 'var(--text-faint)',
+          fontSize: '13px', marginBottom: '16px', cursor: 'pointer', padding: 0
+        }}>
+          ← Continua come ospite
+        </button>
+
         <button onClick={handleGoogle} disabled={loading} style={{
           width: '100%', padding: '14px', marginBottom: '20px',
           background: 'var(--ink-soft)', border: '1px solid var(--ink-muted)',
