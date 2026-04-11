@@ -23,3 +23,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Bubblewrap
+android.keystore
+twa-manifest.json
+manifest-checksum.txt
+app/
+gradle/
+gradlew
+gradlew.bat
+build.gradle
+settings.gradle
+gradle.properties
+store_icon.png
+*.apk
+*.apk.idsig
+*.aab
+build/
+.gradle/
