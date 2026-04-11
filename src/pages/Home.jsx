@@ -49,7 +49,7 @@ export default function Home({ user, isGuest }) {
       {/* Modale elimina */}
       {deletingId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ background: '#242438', border: '1px solid var(--gold)', borderRadius: '16px', padding: '28px 24px', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
+          <div style={{ background: 'var(--ink-soft)', border: '1px solid var(--gold)', borderRadius: '16px', padding: '28px 24px', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
             <div style={{ fontSize: '28px', marginBottom: '12px' }}>🗑️</div>
             <div style={{ color: '#f0ebe0', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>
               Eliminare questa partita?
