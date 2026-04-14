@@ -37,16 +37,21 @@ export default function Amici({ user }) {
     setLoading(false)
   }
 
-  async function addAmico(amico) {
-    await updateDoc(doc(db, 'users', user.uid), { friends: arrayUnion(amico.uid) })
-    setResults([])
-    setSearch('')
-    setMessage(`${amico.displayName} aggiunto agli amici!`)
-  }
+async function addAmico(amico) {
+  // Aggiunge l'amico nel tuo documento
+  await updateDoc(doc(db, 'users', user.uid), { friends: arrayUnion(amico.uid) })
+  // Aggiunge te nel documento dell'amico (reciproco)
+  await updateDoc(doc(db, 'users', amico.uid), { friends: arrayUnion(user.uid) })
+  setResults([])
+  setSearch('')
+  setMessage(`${amico.displayName} aggiunto agli amici!`)
+}
 
-  async function removeAmico(amico) {
-    await updateDoc(doc(db, 'users', user.uid), { friends: arrayRemove(amico.uid) })
-  }
+async function removeAmico(amico) {
+  // Rimuove da entrambi i documenti
+  await updateDoc(doc(db, 'users', user.uid), { friends: arrayRemove(amico.uid) })
+  await updateDoc(doc(db, 'users', amico.uid), { friends: arrayRemove(user.uid) })
+}
 
   const friendUids = amici.map(a => a.uid)
 
