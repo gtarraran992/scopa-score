@@ -30,14 +30,6 @@ dist-ssr
 android.keystore.b64
 twa-manifest.json
 manifest-checksum.txt
-app/
-gradle/
-gradlew
-gradlew.bat
-build.gradle
-settings.gradle
-gradle.properties
-store_icon.png
 *.apk
 *.apk.idsig
 *.aab
