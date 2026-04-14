@@ -25,7 +25,9 @@ dist-ssr
 *.sw?
 
 # Bubblewrap
-android.keystore
+*.keystore
+*.jsk
+android.keystore.b64
 twa-manifest.json
 manifest-checksum.txt
 app/
