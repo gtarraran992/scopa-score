@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">ScopaScore</string>
-    <string name="title_activity_main">ScopaScore</string>
-    <string name="package_name">com.giacomo.scopascore</string>
-    <string name="custom_url_scheme">com.giacomo.scopascore</string>
-</resources>
