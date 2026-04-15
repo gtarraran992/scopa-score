@@ -3,6 +3,6 @@
   "target": {
     "namespace": "android_app",
     "package_name": "com.giacomo.scopascore",
-    "sha256_cert_fingerprints": ["BD:25:C9:D6:A1:4C:54:C4:AA:20:65:54:2A:E8:F1:3D:B0:0B:9C:72:55:85:D6:2A:82:3E:B1:5D:CB:F4:95:16"]
+    "sha256_cert_fingerprints": ["11:3E:C0:F8:9C:54:D8:EF:D1:B6:88:B1:CC:05:66:88:21:3D:94:18:43:0E:4B:09:59:F8:21:D3:70:8B:AE:1B"]
   }
 }]

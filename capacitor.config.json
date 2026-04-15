@@ -1,5 +1,8 @@
 {
   "appId": "com.giacomo.scopascore",
   "appName": "ScopaScore",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  }
 }
