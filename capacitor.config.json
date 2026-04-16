@@ -2,7 +2,11 @@
   "appId": "com.giacomo.scopascore",
   "appName": "ScopaScore",
   "webDir": "dist",
-  "server": {
-    "cleartext": true
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "230215197989-3s5oi84a5lem4la4ogqrod55ng1uibar.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
   }
 }

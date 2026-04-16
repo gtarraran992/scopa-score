@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "230215197989",
+    "project_id": "scopa-score",
+    "storage_bucket": "scopa-score.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230215197989:android:af72db4a30b0d060d566cc",
+        "android_client_info": {
+          "package_name": "com.giacomo.scopascore"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "230215197989-3s5oi84a5lem4la4ogqrod55ng1uibar.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9-FoghAmt2VRH0eb8_3JUrEnFTRUnAj8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "230215197989-3s5oi84a5lem4la4ogqrod55ng1uibar.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
