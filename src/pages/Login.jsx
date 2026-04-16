@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider } from 'firebase/auth'
+import { signInWithRedirect, signInWithEmailAndPassword, createUserWithEmailAndPassword, getRedirectResult } from 'firebase/auth'
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, googleProvider, db } from '../firebase'
 import { getPartiteLocali, clearPartiteLocali } from '../localDB'
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 
 async function handleGoogle() {
   setLoading(true)
