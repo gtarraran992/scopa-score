@@ -1,8 +1,25 @@
 import { useState } from 'react'
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
+import { signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider } from 'firebase/auth'
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, googleProvider, db } from '../firebase'
 import { getPartiteLocali, clearPartiteLocali } from '../localDB'
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
+
+async function handleGoogle() {
+  setLoading(true)
+  try {
+    // Usa il plugin Capacitor invece di signInWithPopup
+    const googleUser = await GoogleAuth.signIn()
+    const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken)
+    const res = await signInWithCredential(auth, credential)
+    await saveUserToDb(res.user)
+    await migraPartiteLocali(res.user)
+  } catch (e) {
+    console.error(e)
+    setError('Errore con Google. Riprova.')
+  }
+  setLoading(false)
+}
 
 async function saveUserToDb(user) {
   const ref = doc(db, 'users', user.uid)
