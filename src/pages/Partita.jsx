@@ -18,9 +18,10 @@ export default function Partita({ user, isGuest }) {
   const [showVittoria, setShowVittoria] = useState(false)
   const eraConclusa = useRef(false)
 
+  const LOCAL_KEY = `partita_in_corso_${id}`
+
   useEffect(() => {
     if (isGuest) {
-      // Modalità ospite — carica da localStorage
       const p = getPartitaLocale(id)
       if (p) {
         eraConclusa.current = p.conclusa
@@ -29,24 +30,31 @@ export default function Partita({ user, isGuest }) {
       return
     }
 
-    // Modalità utente — carica da Firestore
     const unsub = onSnapshot(doc(db, 'partite', id), snap => {
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() }
         setPartita(prev => {
           if (prev === null) {
+            // Prima volta — carica mani da localStorage se presenti
+            const saved = localStorage.getItem(LOCAL_KEY)
+            if (saved) {
+              const { mani: maniLocali } = JSON.parse(saved)
+              eraConclusa.current = data.conclusa
+              return { ...data, mani: maniLocali }
+            }
             eraConclusa.current = data.conclusa
+            return data
           } else if (data.conclusa && !eraConclusa.current) {
             setShowVittoria(true)
             confetti({
-              particleCount: 150,
-              spread: 80,
+              particleCount: 150, spread: 80,
               origin: { y: 0.6 },
               colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e']
             })
             eraConclusa.current = true
           }
-          return data
+          // Non sovrascrivere le mani locali con quelle di Firestore
+          return { ...data, mani: prev.mani }
         })
       }
     })
@@ -137,11 +145,9 @@ export default function Partita({ user, isGuest }) {
         return
       }
     }
-    // Vibrazione feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(50)
-    }
+    if (navigator.vibrate) navigator.vibrate(50)
     setError('')
+
     const mano = {}
     partita.players.forEach((_, pi) => {
       const cur = current[pi] || {}
@@ -150,6 +156,7 @@ export default function Partita({ user, isGuest }) {
         + (opzioni.napoli !== false ? (cur.napoli || 0) : 0)
       mano[pi] = { ...cur, total }
     })
+
     const nuoveMani = [...mani, mano]
     const nuoviScores = calcTotals(partita.players, nuoveMani).map(t => t.total)
     const nuovoMax = Math.max(...nuoviScores)
@@ -159,20 +166,26 @@ export default function Partita({ user, isGuest }) {
       const updated = updatePartitaLocale({ mani: nuoveMani, conclusa })
       if (conclusa) {
         setShowVittoria(true)
-        confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e']
-        })
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e'] })
       }
     } else {
-      await updateDoc(doc(db, 'partite', id), {
-        mani: nuoveMani,
-        conclusa,
-        ...(conclusa ? { conclusaAt: serverTimestamp() } : {})
-      })
+      // Salva in localStorage durante la partita
+      localStorage.setItem(LOCAL_KEY, JSON.stringify({ mani: nuoveMani }))
+      setPartita(prev => ({ ...prev, mani: nuoveMani, conclusa }))
+
+      // Scrivi su Firestore SOLO a fine partita
+      if (conclusa) {
+        localStorage.removeItem(LOCAL_KEY)
+        await updateDoc(doc(db, 'partite', id), {
+          mani: nuoveMani,
+          conclusa: true,
+          conclusaAt: serverTimestamp()
+        })
+        setShowVittoria(true)
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e'] })
+      }
     }
+
     setCurrent({})
     setTab('punteggio')
   }
@@ -182,7 +195,8 @@ export default function Partita({ user, isGuest }) {
     if (isGuest) {
       updatePartitaLocale({ mani: nuoveMani, conclusa: false })
     } else {
-      await updateDoc(doc(db, 'partite', id), { mani: nuoveMani, conclusa: false })
+      localStorage.setItem(LOCAL_KEY, JSON.stringify({ mani: nuoveMani }))
+      setPartita(prev => ({ ...prev, mani: nuoveMani, conclusa: false }))
     }
     setDeletingMano(null)
   }
@@ -191,7 +205,8 @@ export default function Partita({ user, isGuest }) {
     if (isGuest) {
       updatePartitaLocale({ mani: [], conclusa: false })
     } else {
-      await updateDoc(doc(db, 'partite', id), { mani: [], conclusa: false })
+      localStorage.removeItem(LOCAL_KEY)
+      setPartita(prev => ({ ...prev, mani: [], conclusa: false }))
     }
     setCurrent({})
     setShowReset(false)
