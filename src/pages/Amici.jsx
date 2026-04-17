@@ -11,18 +11,28 @@ export default function Amici({ user }) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'users', user.uid), snap => {
-      const data = snap.data()
-      if (data?.friends?.length > 0) {
-        const q = query(collection(db, 'users'), where('uid', 'in', data.friends))
-        getDocs(q).then(s => setAmici(s.docs.map(d => d.data())))
-      } else {
-        setAmici([])
-      }
-    })
-    return unsub
-  }, [user.uid])
+useEffect(() => {
+  let unsubAmici = null
+
+  const unsubUser = onSnapshot(doc(db, 'users', user.uid), snap => {
+    const data = snap.data()
+    
+    // Cancella il listener precedente degli amici
+    if (unsubAmici) unsubAmici()
+    
+    if (data?.friends?.length > 0) {
+      const q = query(collection(db, 'users'), where('uid', 'in', data.friends))
+      unsubAmici = onSnapshot(q, s => setAmici(s.docs.map(d => d.data())))
+    } else {
+      setAmici([])
+    }
+  })
+
+  return () => {
+    unsubUser()
+    if (unsubAmici) unsubAmici()
+  }
+}, [user.uid])
 
   async function searchUsers() {
     if (!search.trim()) return
