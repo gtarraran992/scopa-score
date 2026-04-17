@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { signInWithRedirect, signInWithEmailAndPassword, createUserWithEmailAndPassword, getRedirectResult, GoogleAuthProvider } from 'firebase/auth'
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { getPartiteLocali, clearPartiteLocali } from '../localDB'
 import { auth, googleProvider, db } from '../firebase'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
 
 async function saveUserToDb(user) {
   const ref = doc(db, 'users', user.uid)
@@ -44,24 +46,33 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
+useEffect(() => {
+  if (Capacitor.isNativePlatform()) {
     getRedirectResult(auth).then(async result => {
       if (result?.user) {
         await saveUserToDb(result.user)
         await migraPartiteLocali(result.user)
       }
     }).catch(() => {})
-  }, [])
-
-  async function handleGoogle() {
-    setLoading(true)
-    try {
-      await signInWithRedirect(auth, googleProvider)
-    } catch (e) {
-      setError('Errore con Google. Riprova.')
-      setLoading(false)
-    }
   }
+}, [])
+
+async function handleGoogle() {
+  setLoading(true)
+  try {
+    if (Capacitor.isNativePlatform()) {
+      await signInWithRedirect(auth, googleProvider)
+    } else {
+      const res = await signInWithPopup(auth, googleProvider)
+      await saveUserToDb(res.user)
+      await migraPartiteLocali(res.user)
+    }
+  } catch (e) {
+    console.error(e)
+    setError('Errore con Google. Riprova.')
+    setLoading(false)
+  }
+}
 
   async function handleEmail() {
     setLoading(true)
