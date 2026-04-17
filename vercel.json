@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    { 
+      "source": "/.well-known/assetlinks.json", 
+      "destination": "/assetlinks.json" 
+    },
     { "source": "/(.*)", "destination": "/" }
   ],
   "headers": [
@@ -9,5 +13,6 @@
         { "key": "Content-Type", "value": "application/json" }
       ]
     }
-  ]
+  ],
+  "ignoreCommand": "echo 'skip'"
 }
