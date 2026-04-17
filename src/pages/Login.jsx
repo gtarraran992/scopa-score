@@ -1,24 +1,8 @@
-import { useState } from 'react'
-import { signInWithRedirect, signInWithEmailAndPassword, createUserWithEmailAndPassword, getRedirectResult } from 'firebase/auth'
+import { useState, useEffect } from 'react'
+import { signInWithRedirect, signInWithEmailAndPassword, createUserWithEmailAndPassword, getRedirectResult, GoogleAuthProvider } from 'firebase/auth'
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { auth, googleProvider, db } from '../firebase'
 import { getPartiteLocali, clearPartiteLocali } from '../localDB'
-
-async function handleGoogle() {
-  setLoading(true)
-  try {
-    // Usa il plugin Capacitor invece di signInWithPopup
-    const googleUser = await GoogleAuth.signIn()
-    const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken)
-    const res = await signInWithCredential(auth, credential)
-    await saveUserToDb(res.user)
-    await migraPartiteLocali(res.user)
-  } catch (e) {
-    console.error(e)
-    setError('Errore con Google. Riprova.')
-  }
-  setLoading(false)
-}
+import { auth, googleProvider, db } from '../firebase'
 
 async function saveUserToDb(user) {
   const ref = doc(db, 'users', user.uid)
@@ -37,7 +21,6 @@ async function saveUserToDb(user) {
 async function migraPartiteLocali(user) {
   const partite = getPartiteLocali()
   if (partite.length === 0) return
-
   for (const p of partite) {
     await addDoc(collection(db, 'partite'), {
       players: p.players,
@@ -50,7 +33,6 @@ async function migraPartiteLocali(user) {
       createdBy: user.uid,
     })
   }
-
   clearPartiteLocali()
 }
 
@@ -62,16 +44,23 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    getRedirectResult(auth).then(async result => {
+      if (result?.user) {
+        await saveUserToDb(result.user)
+        await migraPartiteLocali(result.user)
+      }
+    }).catch(() => {})
+  }, [])
+
   async function handleGoogle() {
     setLoading(true)
     try {
-      const res = await signInWithPopup(auth, googleProvider)
-      await saveUserToDb(res.user)
-      await migraPartiteLocali(res.user)
+      await signInWithRedirect(auth, googleProvider)
     } catch (e) {
       setError('Errore con Google. Riprova.')
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function handleEmail() {
@@ -119,8 +108,6 @@ export default function Login() {
       </div>
 
       <div style={{ width: '100%', maxWidth: '360px' }}>
-
-        {/* Bottone torna indietro se viene da ospite */}
         <button onClick={() => window.history.back()} style={{
           background: 'none', border: 'none', color: 'var(--text-faint)',
           fontSize: '13px', marginBottom: '16px', cursor: 'pointer', padding: 0
@@ -150,29 +137,11 @@ export default function Login() {
         </div>
 
         {mode === 'register' && (
-          <input
-            placeholder="Nome visualizzato"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            style={inputStyle}
-          />
+          <input placeholder="Nome visualizzato" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
         )}
 
-        <input
-          placeholder="Email"
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          style={inputStyle}
-        />
-
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          style={{ ...inputStyle, marginBottom: '20px' }}
-        />
+        <input placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
+        <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, marginBottom: '20px' }} />
 
         {error && (
           <div style={{ color: 'var(--gold)', fontSize: '13px', marginBottom: '14px', textAlign: 'center' }}>
