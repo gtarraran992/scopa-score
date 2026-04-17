@@ -28,7 +28,6 @@ android/app/google-services.json
 # Bubblewrap
 *.keystore
 *.jsk
-android
 android.keystore.b64
 twa-manifest.json
 manifest-checksum.txt
@@ -37,3 +36,9 @@ manifest-checksum.txt
 *.aab
 build/
 .gradle/
+
+# Android - escludi solo file sensibili e build
+android/app/build/
+android/.gradle/
+android/app/google-services.json
+android/local.properties
