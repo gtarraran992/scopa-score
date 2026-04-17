@@ -13,6 +13,5 @@
         { "key": "Content-Type", "value": "application/json" }
       ]
     }
-  ],
-  "ignoreCommand": "echo 'skip'"
+  ]
 }
