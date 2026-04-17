@@ -3,10 +3,9 @@
   "appName": "ScopaScore",
   "webDir": "dist",
   "plugins": {
-    "GoogleAuth": {
-      "scopes": ["profile", "email"],
-      "serverClientId": "230215197989-3s5oi84a5lem4la4ogqrod55ng1uibar.apps.googleusercontent.com",
-      "forceCodeForRefreshToken": true
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": ["google.com"]
     }
   }
 }
