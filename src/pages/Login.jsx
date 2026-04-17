@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
+import { signInWithPopup, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider } from 'firebase/auth'
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { getPartiteLocali, clearPartiteLocali } from '../localDB'
 import { auth, googleProvider, db } from '../firebase'
 import { Capacitor } from '@capacitor/core'
-import { Browser } from '@capacitor/browser'
-import { signInWithPopup, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 
 async function saveUserToDb(user) {
   const ref = doc(db, 'users', user.uid)
@@ -46,22 +46,15 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-useEffect(() => {
-  if (Capacitor.isNativePlatform()) {
-    getRedirectResult(auth).then(async result => {
-      if (result?.user) {
-        await saveUserToDb(result.user)
-        await migraPartiteLocali(result.user)
-      }
-    }).catch(() => {})
-  }
-}, [])
-
 async function handleGoogle() {
   setLoading(true)
   try {
     if (Capacitor.isNativePlatform()) {
-      await signInWithRedirect(auth, googleProvider)
+      const result = await FirebaseAuthentication.signInWithGoogle()
+      const credential = GoogleAuthProvider.credential(result.credential?.idToken)
+      const res = await signInWithCredential(auth, credential)
+      await saveUserToDb(res.user)
+      await migraPartiteLocali(res.user)
     } else {
       const res = await signInWithPopup(auth, googleProvider)
       await saveUserToDb(res.user)
@@ -70,8 +63,8 @@ async function handleGoogle() {
   } catch (e) {
     console.error(e)
     setError('Errore con Google. Riprova.')
-    setLoading(false)
   }
+  setLoading(false)
 }
 
   async function handleEmail() {
