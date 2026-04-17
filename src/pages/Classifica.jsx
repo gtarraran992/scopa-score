@@ -15,7 +15,7 @@ export default function Classifica({ user }) {
       const friends = userSnap.data()?.friends || []
       const allUids = [user.uid, ...friends]
 
-      // Prendi tutte le partite concluse che coinvolgono almeno uno degli amici
+      // Prendi tutte le partite concluse che coinvolgono l'utente
       const q = query(
         collection(db, 'partite'),
         where('uids', 'array-contains', user.uid),
@@ -24,18 +24,23 @@ export default function Classifica({ user }) {
       const snap = await getDocs(q)
       const partite = snap.docs.map(d => d.data())
 
-      // Prendi i profili degli amici
+      // Prendi i profili di tutti gli uid coinvolti
       const profileMap = {}
-      profileMap[user.uid] = { uid: user.uid, displayName: user.displayName || user.email, partite: 0, vinte: 0 }
-
-      for (const uid of friends) {
-        const s = await getDoc(doc(db, 'users', uid))
+      for (const uid of allUids) {
+        const s = uid === user.uid
+          ? userSnap
+          : await getDoc(doc(db, 'users', uid))
         if (s.exists()) {
-          profileMap[uid] = { uid, displayName: s.data().displayName, partite: 0, vinte: 0 }
+          profileMap[uid] = {
+            uid,
+            displayName: s.data().displayName || s.data().email,
+            partite: 0,
+            vinte: 0
+          }
         }
       }
 
-      // Calcola statistiche per ogni uid
+      // Calcola statistiche per ogni partita
       partite.forEach(p => {
         const totals = calcTotals(p.players, p.mani || [])
         const scores = totals.map(t => t.total)
@@ -43,11 +48,13 @@ export default function Classifica({ user }) {
         const winnerIdx = scores.filter(s => s === maxScore).length === 1
           ? scores.indexOf(maxScore) : -1
 
-        // Solo il creatore è tracciabile per uid
-        if (p.createdBy && profileMap[p.createdBy]) {
-          profileMap[p.createdBy].partite++
-          if (winnerIdx === 0) profileMap[p.createdBy].vinte++
-        }
+        // Itera su tutti i giocatori della partita
+        p.players.forEach((player, pi) => {
+          const uid = player.uid
+          if (!uid || !profileMap[uid]) return
+          profileMap[uid].partite++
+          if (pi === winnerIdx) profileMap[uid].vinte++
+        })
       })
 
       const risultati = Object.values(profileMap)
