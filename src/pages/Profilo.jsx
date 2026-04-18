@@ -20,10 +20,10 @@ export default function Profilo({ user }) {
   })
 
   function changeTheme(t) {
-  setTheme(t)
-  localStorage.setItem('scopa-theme', t)
-  document.documentElement.setAttribute('data-theme', t)
-}
+    setTheme(t)
+    localStorage.setItem('scopa-theme', t)
+    document.documentElement.setAttribute('data-theme', t)
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -58,15 +58,20 @@ export default function Profilo({ user }) {
         const maxScore = Math.max(...scores)
         const winnerIdx = scores.filter(s => s === maxScore).length === 1
           ? scores.indexOf(maxScore) : -1
-        const myIdx = p.createdBy === user.uid ? 0 : -1
-        if (myIdx === -1) return
 
-        const hoVinto = winnerIdx === myIdx
+        // Trova il mio indice tramite uid nel player
+        const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
+        
+        // Fallback su createdBy per partite vecchie senza uid nei players
+        const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
+        if (myIdxFallback === -1) return
+
+        const hoVinto = winnerIdx === myIdxFallback
         if (hoVinto) vinte++
         else perse++
 
         p.players.forEach((pl, pi) => {
-          if (pi === myIdx) return
+          if (pi === myIdxFallback) return
           const key = pl.name.trim().toLowerCase()
           if (!avversariMap[key]) {
             avversariMap[key] = { name: pl.name, partite: 0, vinteContro: 0 }
@@ -218,7 +223,12 @@ export default function Profilo({ user }) {
               const maxScore = Math.max(...scores)
               const winnerIdx = p.conclusa && scores.filter(s => s === maxScore).length === 1
                 ? scores.indexOf(maxScore) : -1
-              const hoVinto = winnerIdx === 0
+              
+              // Trova il mio indice tramite uid, con fallback su createdBy
+              const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
+              const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
+              const hoVinto = winnerIdx === myIdxFallback
+
               const data = p.createdAt?.toDate
                 ? p.createdAt.toDate().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })
                 : ''
@@ -252,29 +262,30 @@ export default function Profilo({ user }) {
         </>
       )}
 
-<div style={sectionTitle}>Tema</div>
-<div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
-  {[
-    { id: 'dark', label: '🌑 Dark', color: '#1a1a2e' },
-    { id: 'green', label: '🎰 Tavolo', color: '#1a3a2a' },
-  ].map(t => (
-    <button
-      key={t.id}
-      onClick={() => changeTheme(t.id)}
-      style={{
-        flex: 1, padding: '14px 10px',
-        background: t.color,
-        border: `2px solid ${theme === t.id ? 'var(--gold)' : 'var(--ink-muted)'}`,
-        borderRadius: 'var(--radius-lg)',
-        color: theme === t.id ? 'var(--gold)' : 'var(--text-muted)',
-        fontSize: '13px', fontWeight: theme === t.id ? '500' : '400',
-        cursor: 'pointer', transition: 'all 0.2s'
-      }}
-    >
-      {t.label}
-    </button>
-  ))}
-</div>
+      {/* Tema */}
+      <div style={sectionTitle}>Tema</div>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+        {[
+          { id: 'dark', label: '🌑 Dark', color: '#1a1a2e' },
+          { id: 'green', label: '🎰 Tavolo', color: '#1a3a2a' },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => changeTheme(t.id)}
+            style={{
+              flex: 1, padding: '14px 10px',
+              background: t.color,
+              border: `2px solid ${theme === t.id ? 'var(--gold)' : 'var(--ink-muted)'}`,
+              borderRadius: 'var(--radius-lg)',
+              color: theme === t.id ? 'var(--gold)' : 'var(--text-muted)',
+              fontSize: '13px', fontWeight: theme === t.id ? '500' : '400',
+              cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       {/* Legal */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
