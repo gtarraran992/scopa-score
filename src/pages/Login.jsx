@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { signInWithPopup, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider } from 'firebase/auth'
+import { signInWithPopup, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth'
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { getPartiteLocali, clearPartiteLocali } from '../localDB'
 import { auth, googleProvider, db } from '../firebase'
@@ -45,27 +45,28 @@ export default function Login() {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
 
-async function handleGoogle() {
-  setLoading(true)
-  try {
-    if (Capacitor.isNativePlatform()) {
-      const result = await FirebaseAuthentication.signInWithGoogle()
-      const credential = GoogleAuthProvider.credential(result.credential?.idToken)
-      const res = await signInWithCredential(auth, credential)
-      await saveUserToDb(res.user)
-      await migraPartiteLocali(res.user)
-    } else {
-      const res = await signInWithPopup(auth, googleProvider)
-      await saveUserToDb(res.user)
-      await migraPartiteLocali(res.user)
+  async function handleGoogle() {
+    setLoading(true)
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const result = await FirebaseAuthentication.signInWithGoogle()
+        const credential = GoogleAuthProvider.credential(result.credential?.idToken)
+        const res = await signInWithCredential(auth, credential)
+        await saveUserToDb(res.user)
+        await migraPartiteLocali(res.user)
+      } else {
+        const res = await signInWithPopup(auth, googleProvider)
+        await saveUserToDb(res.user)
+        await migraPartiteLocali(res.user)
+      }
+    } catch (e) {
+      console.error(e)
+      setError('Errore con Google. Riprova.')
     }
-  } catch (e) {
-    console.error(e)
-    setError('Errore con Google. Riprova.')
+    setLoading(false)
   }
-  setLoading(false)
-}
 
   async function handleEmail() {
     setLoading(true)
@@ -95,6 +96,22 @@ async function handleGoogle() {
       } else {
         setError('Errore. Riprova.')
       }
+    }
+    setLoading(false)
+  }
+
+  async function handleResetPassword() {
+    if (!email.trim()) {
+      setError('Inserisci la tua email per reimpostare la password.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      await sendPasswordResetEmail(auth, email.trim())
+      setResetSent(true)
+    } catch (e) {
+      setError('Email non trovata. Controlla di aver inserito l\'email corretta.')
     }
     setLoading(false)
   }
@@ -145,7 +162,26 @@ async function handleGoogle() {
         )}
 
         <input placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
-        <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, marginBottom: '20px' }} />
+        <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }} />
+
+        {/* Password dimenticata — solo in modalità login */}
+        {mode === 'login' && (
+          <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+            {resetSent ? (
+              <span style={{ fontSize: '12px', color: 'var(--success)' }}>
+                ✓ Email inviata! Controlla la tua casella.
+              </span>
+            ) : (
+              <button onClick={handleResetPassword} disabled={loading} style={{
+                background: 'none', border: 'none',
+                color: 'var(--text-faint)', fontSize: '12px',
+                cursor: 'pointer', padding: 0
+              }}>
+                Password dimenticata?
+              </button>
+            )}
+          </div>
+        )}
 
         {error && (
           <div style={{ color: 'var(--gold)', fontSize: '13px', marginBottom: '14px', textAlign: 'center' }}>
@@ -157,7 +193,7 @@ async function handleGoogle() {
           {loading ? '...' : mode === 'login' ? 'Accedi' : 'Registrati'}
         </button>
 
-        <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }} className="btn-ghost">
+        <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); setResetSent(false) }} className="btn-ghost">
           {mode === 'login' ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi'}
         </button>
       </div>
