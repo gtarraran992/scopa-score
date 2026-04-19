@@ -166,7 +166,7 @@ export default function NuovaPartita({ user, isGuest }) {
                   color: 'var(--text-faint)', fontSize: '12px'
                 }}>Cambia</button>
               </div>
-            ) : i === 0 ? (
+            ) : i === 0 && !isGuest ? (
               // Primo giocatore — non modificabile se loggato
               <span style={{ flex: 1, fontSize: '15px', color: 'var(--cream)' }}>{p.name}</span>
             ) : (
