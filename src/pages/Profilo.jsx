@@ -244,9 +244,12 @@ export default function Profilo({ user }) {
                       {!p.conclusa ? '🎮' : hoVinto ? '🏆' : '😔'}
                     </span>
                     <div>
-                      <div style={{ fontSize: '13px', color: 'var(--cream)', fontWeight: '500' }}>
-                        {p.players.map(pl => pl.name).join(' vs ')}
-                      </div>
+<div style={{ fontSize: '13px', color: 'var(--cream)', fontWeight: '500' }}>
+  {[...p.players]
+    .sort((a, b) => (b.uid === user.uid) - (a.uid === user.uid))
+    .map(pl => pl.name)
+    .join(' vs ')}
+</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-faint)', marginTop: '2px' }}>
                         {data} · {!p.conclusa ? 'In corso' : hoVinto ? 'Vittoria' : 'Sconfitta'}
                       </div>
