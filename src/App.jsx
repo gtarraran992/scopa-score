@@ -12,6 +12,8 @@ import Classifica from './pages/Classifica'
 import Legal from './pages/Legal'
 import Onboarding from './pages/Onboarding'
 import OfflineBanner from './components/OfflineBanner'
+import { LocalNotifications } from '@capacitor/local-notifications'
+import { Capacitor } from '@capacitor/core'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
@@ -20,6 +22,39 @@ export default function App() {
     const unsub = onAuthStateChanged(auth, u => setUser(u))
     return unsub
   }, [])
+
+  useEffect(() => {
+  if (!Capacitor.isNativePlatform()) return
+
+  async function scheduleNotifica() {
+    const { display } = await LocalNotifications.checkPermissions()
+    if (display !== 'granted') {
+      const { display: granted } = await LocalNotifications.requestPermissions()
+      if (granted !== 'granted') return
+    }
+
+    // Cancella eventuali notifiche precedenti per evitare duplicati
+    await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
+
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 1,
+          title: '🃏 ScopaScore',
+          body: 'Sfida un amico a Scopa oggi!',
+          schedule: {
+            every: 'day',
+            on: { hour: 12, minute: 0 },
+          },
+          sound: null,
+          smallIcon: 'ic_launcher',
+        }
+      ]
+    })
+  }
+
+  scheduleNotifica()
+}, [])
 
   if (user === undefined) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
