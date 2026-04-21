@@ -42,3 +42,8 @@ android/app/build/
 android/.gradle/
 android/app/google-services.json
 android/local.properties
+
+# Firebase Functions
+functions/node_modules
+functions/.env
+functions/.secret.local

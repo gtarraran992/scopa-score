@@ -15,7 +15,7 @@ const SLIDES = [
   {
     icon: '✅',
     title: 'Registra ogni mano',
-    desc: 'Seleziona chi ha preso carte, ori, sette bello, re bello, primiera e conta scope e napoli.',
+    desc: 'Seleziona chi ha preso carte, denari, sette bello, re bello, primiera e conta scope e napoli.',
   },
   {
     icon: '🏆',

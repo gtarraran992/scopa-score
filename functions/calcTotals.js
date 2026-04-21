@@ -1,4 +1,4 @@
-export const PUNTI = [
+const PUNTI = [
   { key: 'carte', label: 'Carte' },
   { key: 'denaro', label: 'Denari' },
   { key: 'settebello', label: 'Sette bello' },
@@ -6,9 +6,7 @@ export const PUNTI = [
   { key: 'primiera', label: 'Primiera' },
 ]
 
-export const DEFAULT_TARGET = 21
-
-export function calcTotals(players, mani) {
+function calcTotals(players, mani) {
   return players.map((_, pi) => {
     const totByKey = {}
     PUNTI.forEach(pt => {
@@ -20,3 +18,5 @@ export function calcTotals(players, mani) {
     return totByKey
   })
 }
+
+module.exports = { calcTotals }
