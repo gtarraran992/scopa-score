@@ -14,6 +14,7 @@ import Onboarding from './pages/Onboarding'
 import OfflineBanner from './components/OfflineBanner'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { Capacitor } from '@capacitor/core'
+import { initAudio, playSound } from './utils/audio'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
@@ -25,6 +26,11 @@ export default function App() {
 
   useEffect(() => {
   if (!Capacitor.isNativePlatform()) return
+  
+  initAudio()
+  LocalNotifications.addListener('localNotificationReceived', () => {
+    playSound('notifica')
+  })
 
   async function scheduleNotifica() {
     const { display } = await LocalNotifications.checkPermissions()

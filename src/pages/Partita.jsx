@@ -5,6 +5,7 @@ import { db } from '../firebase'
 import { PUNTI, calcTotals } from '../config'
 import { getPartitaLocale, savePartitaLocale } from '../localDB'
 import confetti from 'canvas-confetti'
+import { playSound } from '../utils/audio'
 
 export default function Partita({ user, isGuest }) {
   const { id } = useParams()
@@ -51,6 +52,10 @@ export default function Partita({ user, isGuest }) {
               origin: { y: 0.6 },
               colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e']
             })
+            const snapTotals = calcTotals(data.players, data.mani || []).map(t => t.total)
+            const snapWinnerIdx = snapTotals.indexOf(Math.max(...snapTotals))
+            const myIdx = data.players.findIndex(pl => pl.uid === user?.uid)
+            playSound(myIdx === snapWinnerIdx ? 'vittoria' : 'sconfitta')
             eraConclusa.current = true
           }
           // Non sovrascrivere le mani locali con quelle di Firestore
@@ -167,6 +172,10 @@ export default function Partita({ user, isGuest }) {
       if (conclusa) {
         setShowVittoria(true)
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e'] })
+        const nuoviTotals = calcTotals(partita.players, nuoveMani).map(t => t.total)
+        const nuovoWinnerIdx = nuoviTotals.indexOf(Math.max(...nuoviTotals))
+        const myIdx = partita.players.findIndex(pl => pl.uid === user?.uid)
+        playSound(myIdx === nuovoWinnerIdx ? 'vittoria' : 'sconfitta')
       }
     } else {
       // Salva in localStorage durante la partita
@@ -183,6 +192,10 @@ export default function Partita({ user, isGuest }) {
         })
         setShowVittoria(true)
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e'] })
+        const nuoviTotals = calcTotals(partita.players, nuoveMani).map(t => t.total)
+        const nuovoWinnerIdx = nuoviTotals.indexOf(Math.max(...nuoviTotals))
+        const myIdx = partita.players.findIndex(pl => pl.uid === user?.uid)
+        playSound(myIdx === nuovoWinnerIdx ? 'vittoria' : 'sconfitta')
       }
     }
 
