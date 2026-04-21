@@ -94,7 +94,7 @@ export default function Partita({ user, isGuest }) {
 
   const pills = [
     { key: 'carte', label: 'Carte' },
-    { key: 'oro', label: 'Ori' },
+    { key: 'denaro', label: 'Denari' },
     { key: 'settebello', label: '7♦' },
     ...(opzioni.rebello ? [{ key: 'rebello', label: 'R♦' }] : []),
     { key: 'primiera', label: 'Prim.' },

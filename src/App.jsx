@@ -15,52 +15,79 @@ import OfflineBanner from './components/OfflineBanner'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { Capacitor } from '@capacitor/core'
 import { initAudio, playSound } from './utils/audio'
+import { PushNotifications } from '@capacitor/push-notifications'
+import { doc, updateDoc } from 'firebase/firestore'
+import { db } from './firebase'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
 
+  // 1. Auth
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, u => setUser(u))
     return unsub
   }, [])
 
+  // 2. Notifiche locali + audio
   useEffect(() => {
-  if (!Capacitor.isNativePlatform()) return
-  
-  initAudio()
-  LocalNotifications.addListener('localNotificationReceived', () => {
-    playSound('notifica')
-  })
+    if (!Capacitor.isNativePlatform()) return
 
-  async function scheduleNotifica() {
-    const { display } = await LocalNotifications.checkPermissions()
-    if (display !== 'granted') {
-      const { display: granted } = await LocalNotifications.requestPermissions()
-      if (granted !== 'granted') return
+    initAudio()
+
+    LocalNotifications.addListener('localNotificationReceived', () => {
+      playSound('notifica')
+    })
+
+    async function scheduleNotifica() {
+      const { display } = await LocalNotifications.checkPermissions()
+      if (display !== 'granted') {
+        const { display: granted } = await LocalNotifications.requestPermissions()
+        if (granted !== 'granted') return
+      }
+      await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 1,
+            title: '🃏 ScopaScore',
+            body: 'Sfida un amico a Scopa oggi!',
+            schedule: {
+              every: 'day',
+              on: { hour: 12, minute: 0 },
+            },
+            sound: null,
+            smallIcon: 'ic_launcher',
+          }
+        ]
+      })
     }
 
-    // Cancella eventuali notifiche precedenti per evitare duplicati
-    await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
+    scheduleNotifica()
+  }, [])
 
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: 1,
-          title: '🃏 ScopaScore',
-          body: 'Sfida un amico a Scopa oggi!',
-          schedule: {
-            every: 'day',
-            on: { hour: 12, minute: 0 },
-          },
-          sound: null,
-          smallIcon: 'ic_launcher',
+  // 3. FCM token — dipende da user
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    if (!user?.uid) return
+
+    async function registerFCMToken() {
+      try {
+        const { receive } = await PushNotifications.checkPermissions()
+        if (receive !== 'granted') {
+          const { receive: granted } = await PushNotifications.requestPermissions()
+          if (granted !== 'granted') return
         }
-      ]
-    })
-  }
+        await PushNotifications.register()
+        PushNotifications.addListener('registration', async token => {
+          await updateDoc(doc(db, 'users', user.uid), { fcmToken: token.value })
+        })
+      } catch (e) {
+        console.warn('FCM registration error:', e)
+      }
+    }
 
-  scheduleNotifica()
-}, [])
+    registerFCMToken()
+  }, [user?.uid])
 
   if (user === undefined) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
