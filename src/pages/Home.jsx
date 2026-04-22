@@ -5,6 +5,7 @@ import { signOut } from 'firebase/auth'
 import { db, auth } from '../firebase'
 import { calcTotals } from '../config'
 import { getPartiteLocali, deletePartitaLocale } from '../localDB'
+import DenariLogo from '../components/DenariLogo'
 
 export default function Home({ user, isGuest }) {
   const [partite, setPartite] = useState([])
@@ -65,10 +66,13 @@ export default function Home({ user, isGuest }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--gold)' }}>♠ Scopa</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {isGuest ? 'Modalità ospite' : `Ciao, ${user.displayName || user.email}`}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+  <DenariLogo size={36} glow={true} />
+  <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--gold)' }}>Scopa</h1>
+</div>
+  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', paddingLeft: '40px' }}>
+    {isGuest ? 'Modalità ospite' : `Ciao, ${user.displayName || user.email}`}
+  </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           {!isGuest && <button onClick={() => navigate('/classifica')} style={iconBtn}>🏆</button>}

@@ -8,7 +8,7 @@
       "providers": ["google.com"]
     },
     "LocalNotifications": {
-      "smallIcon": "ic_launcher",
+      "smallIcon": "ic_stat_notify",
       "iconColor": "#c9963a"
     }
   }

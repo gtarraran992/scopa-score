@@ -18,9 +18,11 @@ import { initAudio, playSound } from './utils/audio'
 import { PushNotifications } from '@capacitor/push-notifications'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from './firebase'
+import SplashScreen from './components/SplashScreen'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
+  const [showSplash, setShowSplash] = useState(true)
 
   // 1. Auth
   useEffect(() => {
@@ -38,29 +40,37 @@ export default function App() {
       playSound('notifica')
     })
 
-    async function scheduleNotifica() {
-      const { display } = await LocalNotifications.checkPermissions()
-      if (display !== 'granted') {
-        const { display: granted } = await LocalNotifications.requestPermissions()
-        if (granted !== 'granted') return
+async function scheduleNotifica() {
+  const { display } = await LocalNotifications.checkPermissions()
+  if (display !== 'granted') {
+    const { display: granted } = await LocalNotifications.requestPermissions()
+    if (granted !== 'granted') return
+  }
+  await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
+
+  // Calcola il prossimo mezzogiorno
+  const now = new Date()
+  const next = new Date()
+  next.setHours(12, 0, 0, 0)
+  if (now >= next) next.setDate(next.getDate() + 1) // se mezzogiorno è già passato, domani
+
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        id: 1,
+        title: '🃏 ScopaScore',
+        body: 'Sfida un amico a Scopa oggi!',
+        schedule: {
+          at: next,
+          repeats: true,
+          every: 'day',
+        },
+        sound: null,
+        smallIcon: 'ic_stat_notify',
       }
-      await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: 1,
-            title: '🃏 ScopaScore',
-            body: 'Sfida un amico a Scopa oggi!',
-            schedule: {
-              every: 'day',
-              on: { hour: 12, minute: 0 },
-            },
-            sound: null,
-            smallIcon: 'ic_launcher',
-          }
-        ]
-      })
-    }
+    ]
+  })
+}
 
     scheduleNotifica()
   }, [])
@@ -99,6 +109,7 @@ export default function App() {
 
   return (
     <div style={{ height: '100%' }}>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       <OfflineBanner />
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />

@@ -5,6 +5,7 @@ import { getPartiteLocali, clearPartiteLocali } from '../localDB'
 import { auth, googleProvider, db } from '../firebase'
 import { Capacitor } from '@capacitor/core'
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
+import DenariLogo from '../components/DenariLogo'
 
 async function saveUserToDb(user) {
   const ref = doc(db, 'users', user.uid)
@@ -122,11 +123,13 @@ export default function Login() {
       alignItems: 'center', justifyContent: 'center',
       padding: '32px 24px', background: 'var(--ink)'
     }}>
-      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '40px', color: 'var(--gold)' }}>♠</div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', color: 'var(--cream)', marginTop: '8px' }}>Scopa</h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>Il segnapunti per la scopa</p>
-      </div>
+<div style={{ marginBottom: '32px', textAlign: 'center' }}>
+  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+  <DenariLogo size={80} glow={true} />
+  </div>
+  <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', color: 'var(--cream)' }}>Scopa</h1>
+  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>Il segnapunti per la scopa</p>
+</div>
 
       <div style={{ width: '100%', maxWidth: '360px' }}>
         <button onClick={() => window.history.back()} style={{

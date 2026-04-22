@@ -5,6 +5,7 @@ const suoni = [
   { assetId: 'vittoria', assetPath: 'vittoria.mp3' },
   { assetId: 'sconfitta', assetPath: 'sconfitta.mp3' },
   { assetId: 'notifica', assetPath: 'notifica.mp3' },
+  { assetId: 'apertura', assetPath: 'apertura.mp3' },
 ]
 
 export async function initAudio() {
