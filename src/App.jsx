@@ -67,6 +67,7 @@ async function scheduleNotifica() {
         },
         sound: null,
         smallIcon: 'ic_stat_notify',
+        channelId: 'promemoria', 
       }
     ]
   })
