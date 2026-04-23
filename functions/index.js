@@ -45,8 +45,7 @@ exports.notificaFinePartita = onDocumentUpdated("partite/{partitaId}", async (ev
       },
       android: {
         notification: {
-          sound: isWinner ? "vittoria" : "sconfitta",
-          channelId: "partita",
+          channelId: isWinner ? "vittoria" : "sconfitta",
         }
       }
     });
