@@ -46,6 +46,7 @@ exports.notificaFinePartita = onDocumentUpdated("partite/{partitaId}", async (ev
       android: {
         notification: {
           channelId: isWinner ? "vittoria" : "sconfitta",
+          icon: "ic_stat_notify",
         }
       }
     });
