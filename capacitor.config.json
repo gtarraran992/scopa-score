@@ -10,11 +10,14 @@
     "LocalNotifications": {
       "iconColor": "#c9963a"
     },
-    "SplashScreen": {
-      "launchShowDuration": 0,
-      "backgroundColor": "#0f1a14",
-      "androidSplashResourceName": "splash",
-      "showSpinner": false
-    }
+"SplashScreen": {
+  "launchShowDuration": 0,
+  "launchAutoHide": true,
+  "backgroundColor": "#0f1a14",
+  "androidSplashResourceName": "splash",
+  "showSpinner": false,
+  "splashFullScreen": true,
+  "splashImmersive": true
+}
   }
 }
