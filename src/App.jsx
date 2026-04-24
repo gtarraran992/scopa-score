@@ -19,6 +19,7 @@ import { PushNotifications } from '@capacitor/push-notifications'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from './firebase'
 import SplashScreen from './components/SplashScreen'
+import DenariLogo from './components/DenariLogo'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
@@ -100,11 +101,11 @@ async function scheduleNotifica() {
     registerFCMToken()
   }, [user?.uid])
 
-  if (user === undefined) return (
-    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-display)', fontSize: '24px' }}>♠</span>
-    </div>
-  )
+if (user === undefined) return (
+  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)' }}>
+    <DenariLogo size={80} glow={true} />
+  </div>
+)
 
   const isGuest = !user
 
