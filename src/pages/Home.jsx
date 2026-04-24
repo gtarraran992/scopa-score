@@ -14,12 +14,10 @@ export default function Home({ user, isGuest }) {
 
   useEffect(() => {
     if (isGuest) {
-      // Modalità ospite — carica da localStorage
       setPartite(getPartiteLocali())
       return
     }
 
-    // Modalità utente — carica da Firestore
     const q = query(
       collection(db, 'partite'),
       where('uids', 'array-contains', user.uid),
@@ -67,12 +65,12 @@ export default function Home({ user, isGuest }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-  <DenariLogo size={36} glow={true} />
-  <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--gold)' }}>Scopa</h1>
-</div>
-  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', paddingLeft: '40px' }}>
-    {isGuest ? 'Modalità ospite' : `Ciao, ${user.displayName || user.email}`}
-  </p>
+            <DenariLogo size={36} glow={true} />
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--gold)' }}>Scopa</h1>
+          </div>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', paddingLeft: '46px' }}>
+            {isGuest ? 'Modalità ospite' : `Ciao, ${user.displayName || user.email}`}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           {!isGuest && <button onClick={() => navigate('/classifica')} style={iconBtn}>🏆</button>}
@@ -119,6 +117,7 @@ export default function Home({ user, isGuest }) {
             <PartitaCard
               key={p.id}
               partita={p}
+              user={user}
               onClick={() => navigate(`/partita/${p.id}`)}
               onDelete={e => { e.stopPropagation(); setDeletingId(p.id) }}
             />
@@ -134,6 +133,7 @@ export default function Home({ user, isGuest }) {
             <PartitaCard
               key={p.id}
               partita={p}
+              user={user}
               onClick={() => navigate(`/partita/${p.id}`)}
               onDelete={e => { e.stopPropagation(); setDeletingId(p.id) }}
             />
@@ -152,8 +152,12 @@ export default function Home({ user, isGuest }) {
   )
 }
 
-function PartitaCard({ partita, onClick, onDelete }) {
-  const totals = calcTotals(partita.players, partita.mani || [])
+function PartitaCard({ partita, user, onClick, onDelete }) {
+  // Riordina players mettendo l'utente loggato per primo
+  const players = [...partita.players].sort((a, b) =>
+    (b.uid === user?.uid) - (a.uid === user?.uid)
+  )
+  const totals = calcTotals(players, partita.mani || [])
   const scores = totals.map(t => t.total)
   const maxScore = Math.max(...scores)
   const winnerIdx = partita.conclusa && scores.filter(s => s === maxScore).length === 1
@@ -177,7 +181,7 @@ function PartitaCard({ partita, onClick, onDelete }) {
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
-        {partita.players.map((p, pi) => (
+        {players.map((p, pi) => (
           <div key={pi} style={{
             flex: 1, background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)',
             padding: '10px 12px',
