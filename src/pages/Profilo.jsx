@@ -27,7 +27,6 @@ export default function Profilo({ user }) {
 
   useEffect(() => {
     async function loadData() {
-      // Carica partite concluse per statistiche
       const qConcluse = query(
         collection(db, 'partite'),
         where('uids', 'array-contains', user.uid),
@@ -36,7 +35,6 @@ export default function Profilo({ user }) {
       const snapConcluse = await getDocs(qConcluse)
       const partiteConcluse = snapConcluse.docs.map(d => d.data())
 
-      // Carica tutte le partite per lo storico
       const qTutte = query(
         collection(db, 'partite'),
         where('uids', 'array-contains', user.uid)
@@ -47,38 +45,49 @@ export default function Profilo({ user }) {
         .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
       setStorico(tutteLePartite)
 
-      // Calcola statistiche
       let vinte = 0
       let perse = 0
       const avversariMap = {}
 
       partiteConcluse.forEach(p => {
-        const totals = calcTotals(p.players, p.mani || [])
-        const scores = totals.map(t => t.total)
-        const maxScore = Math.max(...scores)
-        const winnerIdx = scores.filter(s => s === maxScore).length === 1
-          ? scores.indexOf(maxScore) : -1
+        const isSquadre = p.modalita === 'squadre'
 
-        // Trova il mio indice tramite uid nel player
-        const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
-        
-        // Fallback su createdBy per partite vecchie senza uid nei players
-        const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
-        if (myIdxFallback === -1) return
+        if (isSquadre) {
+          const squadre = p.squadre || []
+          const scores = squadre.map((_, si) =>
+            (p.mani || []).reduce((s, m) => s + (m[si]?.total || 0), 0)
+          )
+          const maxScore = Math.max(...scores)
+          const winnerSi = scores.filter(s => s === maxScore).length === 1
+            ? scores.indexOf(maxScore) : -1
+          const mySquadra = squadre.findIndex(s => s.players.some(pl => pl.uid === user.uid))
+          if (mySquadra === -1) return
+          const hoVinto = winnerSi === mySquadra
+          if (hoVinto) vinte++
+          else perse++
+        } else {
+          const totals = calcTotals(p.players, p.mani || [])
+          const scores = totals.map(t => t.total)
+          const maxScore = Math.max(...scores)
+          const winnerIdx = scores.filter(s => s === maxScore).length === 1
+            ? scores.indexOf(maxScore) : -1
+          const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
+          const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
+          if (myIdxFallback === -1) return
+          const hoVinto = winnerIdx === myIdxFallback
+          if (hoVinto) vinte++
+          else perse++
 
-        const hoVinto = winnerIdx === myIdxFallback
-        if (hoVinto) vinte++
-        else perse++
-
-        p.players.forEach((pl, pi) => {
-          if (pi === myIdxFallback) return
-          const key = pl.name.trim().toLowerCase()
-          if (!avversariMap[key]) {
-            avversariMap[key] = { name: pl.name, partite: 0, vinteContro: 0 }
-          }
-          avversariMap[key].partite++
-          if (hoVinto) avversariMap[key].vinteContro++
-        })
+          p.players.forEach((pl, pi) => {
+            if (pi === myIdxFallback) return
+            const key = pl.name.trim().toLowerCase()
+            if (!avversariMap[key]) {
+              avversariMap[key] = { name: pl.name, partite: 0, vinteContro: 0 }
+            }
+            avversariMap[key].partite++
+            if (hoVinto) avversariMap[key].vinteContro++
+          })
+        }
       })
 
       const topAvversari = Object.values(avversariMap)
@@ -218,20 +227,42 @@ export default function Profilo({ user }) {
           <div style={sectionTitle}>Ultime partite</div>
           <div className="card" style={{ marginBottom: '24px' }}>
             {storico.slice(0, 10).map((p, i) => {
-              const totals = calcTotals(p.players, p.mani || [])
-              const scores = totals.map(t => t.total)
-              const maxScore = Math.max(...scores)
-              const winnerIdx = p.conclusa && scores.filter(s => s === maxScore).length === 1
-                ? scores.indexOf(maxScore) : -1
-              
-              // Trova il mio indice tramite uid, con fallback su createdBy
-              const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
-              const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
-              const hoVinto = winnerIdx === myIdxFallback
+              const isSquadre = p.modalita === 'squadre'
+
+              let hoVinto = false
+              let titolo = ''
+              let scores = []
+
+              if (isSquadre) {
+                const squadre = p.squadre || []
+                scores = squadre.map((_, si) =>
+                  (p.mani || []).reduce((s, m) => s + (m[si]?.total || 0), 0)
+                )
+                const maxScore = Math.max(...scores)
+                const winnerSi = p.conclusa && scores.filter(s => s === maxScore).length === 1
+                  ? scores.indexOf(maxScore) : -1
+                const mySquadra = squadre.findIndex(s => s.players.some(pl => pl.uid === user.uid))
+                hoVinto = winnerSi !== -1 && mySquadra === winnerSi
+                titolo = squadre.map(s => s.nome).join(' vs ')
+              } else {
+                const totals = calcTotals(p.players, p.mani || [])
+                scores = totals.map(t => t.total)
+                const maxScore = Math.max(...scores)
+                const winnerIdx = p.conclusa && scores.filter(s => s === maxScore).length === 1
+                  ? scores.indexOf(maxScore) : -1
+                const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
+                const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
+                hoVinto = winnerIdx === myIdxFallback
+                titolo = [...p.players]
+                  .sort((a, b) => (b.uid === user.uid) - (a.uid === user.uid))
+                  .map(pl => pl.name)
+                  .join(' vs ')
+              }
 
               const data = p.createdAt?.toDate
                 ? p.createdAt.toDate().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })
                 : ''
+
               return (
                 <div key={p.id} style={{
                   padding: '13px 18px',
@@ -244,12 +275,9 @@ export default function Profilo({ user }) {
                       {!p.conclusa ? '🎮' : hoVinto ? '🏆' : '😔'}
                     </span>
                     <div>
-<div style={{ fontSize: '13px', color: 'var(--cream)', fontWeight: '500' }}>
-  {[...p.players]
-    .sort((a, b) => (b.uid === user.uid) - (a.uid === user.uid))
-    .map(pl => pl.name)
-    .join(' vs ')}
-</div>
+                      <div style={{ fontSize: '13px', color: 'var(--cream)', fontWeight: '500' }}>
+                        {titolo}
+                      </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-faint)', marginTop: '2px' }}>
                         {data} · {!p.conclusa ? 'In corso' : hoVinto ? 'Vittoria' : 'Sconfitta'}
                       </div>
