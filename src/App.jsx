@@ -20,6 +20,7 @@ import { doc, updateDoc } from 'firebase/firestore'
 import { db } from './firebase'
 import SplashScreen from './components/SplashScreen'
 import DenariLogo from './components/DenariLogo'
+import { App as CapacitorApp } from '@capacitor/app'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
@@ -41,38 +42,37 @@ export default function App() {
       playSound('notifica')
     })
 
-async function scheduleNotifica() {
-  const { display } = await LocalNotifications.checkPermissions()
-  if (display !== 'granted') {
-    const { display: granted } = await LocalNotifications.requestPermissions()
-    if (granted !== 'granted') return
-  }
-  await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
-
-  // Calcola il prossimo mezzogiorno
-  const now = new Date()
-  const next = new Date()
-  next.setHours(12, 0, 0, 0)
-  if (now >= next) next.setDate(next.getDate() + 1) // se mezzogiorno è già passato, domani
-
-  await LocalNotifications.schedule({
-    notifications: [
-      {
-        id: 1,
-        title: '🃏 ScopaScore',
-        body: 'Sfida un amico a Scopa oggi!',
-        schedule: {
-          at: next,
-          repeats: true,
-          every: 'day',
-        },
-        sound: null,
-        smallIcon: 'ic_stat_notify',
-        channelId: 'promemoria', 
+    async function scheduleNotifica() {
+      const { display } = await LocalNotifications.checkPermissions()
+      if (display !== 'granted') {
+        const { display: granted } = await LocalNotifications.requestPermissions()
+        if (granted !== 'granted') return
       }
-    ]
-  })
-}
+      await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
+
+      const now = new Date()
+      const next = new Date()
+      next.setHours(12, 0, 0, 0)
+      if (now >= next) next.setDate(next.getDate() + 1)
+
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 1,
+            title: '🃏 ScopaScore',
+            body: 'Sfida un amico a Scopa oggi!',
+            schedule: {
+              at: next,
+              repeats: true,
+              every: 'day',
+            },
+            sound: null,
+            smallIcon: 'ic_stat_notify',
+            channelId: 'promemoria',
+          }
+        ]
+      })
+    }
 
     scheduleNotifica()
   }, [])
@@ -101,11 +101,24 @@ async function scheduleNotifica() {
     registerFCMToken()
   }, [user?.uid])
 
-if (user === undefined) return (
-  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)' }}>
-    <DenariLogo size={80} glow={true} />
-  </div>
-)
+  // 4. Back button Android
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    const listener = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      if (canGoBack) {
+        window.history.back()
+      } else {
+        CapacitorApp.exitApp()
+      }
+    })
+    return () => listener.then(l => l.remove())
+  }, [])
+
+  if (user === undefined) return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)' }}>
+      <DenariLogo size={80} glow={true} />
+    </div>
+  )
 
   const isGuest = !user
 

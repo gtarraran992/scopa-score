@@ -6,6 +6,7 @@ import { PUNTI, calcTotals } from '../config'
 import { getPartitaLocale, savePartitaLocale } from '../localDB'
 import confetti from 'canvas-confetti'
 import { playSound } from '../utils/audio'
+import DenariLogo from '../components/DenariLogo'
 
 export default function Partita({ user, isGuest }) {
   const { id } = useParams()
@@ -73,11 +74,11 @@ export default function Partita({ user, isGuest }) {
     return updated
   }
 
-  if (!partita) return (
-    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-display)', fontSize: '24px' }}>♠</span>
-    </div>
-  )
+if (!partita) return (
+  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <DenariLogo size={80} glow={true} />
+  </div>
+)
 
   const opzioni = partita.opzioni || { rebello: true, napoli: true }
   const mani = partita.mani || []
@@ -417,7 +418,9 @@ export default function Partita({ user, isGuest }) {
         {tab === 'storico' && (
           mani.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-faint)' }}>
-              <div style={{ fontSize: '40px', marginBottom: '10px' }}>♠</div>
+              <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'center' }}>
+               <DenariLogo size={48} glow={false} />
+              </div>
               <p style={{ color: 'var(--text-muted)' }}>Nessuna mano ancora</p>
             </div>
           ) : (
