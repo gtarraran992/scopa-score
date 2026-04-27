@@ -153,14 +153,26 @@ export default function Home({ user, isGuest }) {
 }
 
 function PartitaCard({ partita, user, onClick, onDelete }) {
-  // Riordina players mettendo l'utente loggato per primo
-  const players = [...partita.players].sort((a, b) =>
+  const isSquadre = partita.modalita === 'squadre'
+
+  // Modalità squadre
+  const squadre = partita.squadre || []
+  const totalsSquadre = squadre.map((_, si) => ({
+    total: (partita.mani || []).reduce((s, m) => s + (m[si]?.total || 0), 0)
+  }))
+  const scoresSquadre = totalsSquadre.map(t => t.total)
+  const maxScoreSquadre = scoresSquadre.length > 0 ? Math.max(...scoresSquadre) : 0
+  const winnerSquadraIdx = isSquadre && partita.conclusa && scoresSquadre.filter(s => s === maxScoreSquadre).length === 1
+    ? scoresSquadre.indexOf(maxScoreSquadre) : -1
+
+  // Modalità classica
+  const players = isSquadre ? [] : [...partita.players].sort((a, b) =>
     (b.uid === user?.uid) - (a.uid === user?.uid)
   )
-  const totals = calcTotals(players, partita.mani || [])
+  const totals = isSquadre ? [] : calcTotals(players, partita.mani || [])
   const scores = totals.map(t => t.total)
-  const maxScore = Math.max(...scores)
-  const winnerIdx = partita.conclusa && scores.filter(s => s === maxScore).length === 1
+  const maxScore = scores.length > 0 ? Math.max(...scores) : 0
+  const winnerIdx = !isSquadre && partita.conclusa && scores.filter(s => s === maxScore).length === 1
     ? scores.indexOf(maxScore) : -1
 
   const data = partita.createdAt?.toDate
@@ -173,7 +185,7 @@ function PartitaCard({ partita, user, onClick, onDelete }) {
     <div className="card" onClick={onClick} style={{ marginBottom: '12px', padding: '16px', cursor: 'pointer' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <span style={{ fontSize: '12px', color: 'var(--text-faint)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-          {partita.conclusa ? 'Conclusa' : `Mano ${(partita.mani || []).length + 1}`}
+          {isSquadre ? '👥 ' : ''}{partita.conclusa ? 'Conclusa' : `Mano ${(partita.mani || []).length + 1}`}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{data}</span>
@@ -181,18 +193,36 @@ function PartitaCard({ partita, user, onClick, onDelete }) {
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
-        {players.map((p, pi) => (
-          <div key={pi} style={{
-            flex: 1, background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)',
-            padding: '10px 12px',
-            border: winnerIdx === pi ? '1px solid var(--gold)' : '1px solid transparent'
-          }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: winnerIdx === pi ? 'var(--gold)' : 'var(--cream)' }}>
-              {scores[pi]}
+        {isSquadre ? (
+          squadre.map((s, si) => (
+            <div key={si} style={{
+              flex: 1, background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)',
+              padding: '10px 12px',
+              border: winnerSquadraIdx === si ? '1px solid var(--gold)' : '1px solid transparent'
+            }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.nome}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-faint)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {s.players.map(p => p.name).join(' & ')}
+              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: winnerSquadraIdx === si ? 'var(--gold)' : 'var(--cream)' }}>
+                {scoresSquadre[si]}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          players.map((p, pi) => (
+            <div key={pi} style={{
+              flex: 1, background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)',
+              padding: '10px 12px',
+              border: winnerIdx === pi ? '1px solid var(--gold)' : '1px solid transparent'
+            }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: winnerIdx === pi ? 'var(--gold)' : 'var(--cream)' }}>
+                {scores[pi]}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )

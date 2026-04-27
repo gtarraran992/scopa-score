@@ -8,6 +8,20 @@ import confetti from 'canvas-confetti'
 import { playSound } from '../utils/audio'
 import DenariLogo from '../components/DenariLogo'
 
+// Calcola totali per squadre
+function calcTotalsSquadre(squadre, mani) {
+  return squadre.map((_, si) => {
+    const total = mani.reduce((s, m) => s + (m[si]?.total || 0), 0)
+    const byKey = {}
+    PUNTI.forEach(pt => {
+      byKey[pt.key] = mani.reduce((s, m) => s + (m[si]?.[pt.key] || 0), 0)
+    })
+    byKey.scope = mani.reduce((s, m) => s + (m[si]?.scope || 0), 0)
+    byKey.napoli = mani.reduce((s, m) => s + (m[si]?.napoli || 0), 0)
+    return { ...byKey, total }
+  })
+}
+
 export default function Partita({ user, isGuest }) {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -21,6 +35,7 @@ export default function Partita({ user, isGuest }) {
   const eraConclusa = useRef(false)
 
   const LOCAL_KEY = `partita_in_corso_${id}`
+  const isSquadre = partita?.modalita === 'squadre'
 
   useEffect(() => {
     if (isGuest) {
@@ -37,7 +52,6 @@ export default function Partita({ user, isGuest }) {
         const data = { id: snap.id, ...snap.data() }
         setPartita(prev => {
           if (prev === null) {
-            // Prima volta — carica mani da localStorage se presenti
             const saved = localStorage.getItem(LOCAL_KEY)
             if (saved) {
               const { mani: maniLocali } = JSON.parse(saved)
@@ -48,18 +62,20 @@ export default function Partita({ user, isGuest }) {
             return data
           } else if (data.conclusa && !eraConclusa.current) {
             setShowVittoria(true)
-            confetti({
-              particleCount: 150, spread: 80,
-              origin: { y: 0.6 },
-              colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e']
-            })
-            const snapTotals = calcTotals(data.players, data.mani || []).map(t => t.total)
-            const snapWinnerIdx = snapTotals.indexOf(Math.max(...snapTotals))
-            const myIdx = data.players.findIndex(pl => pl.uid === user?.uid)
-            playSound(myIdx === snapWinnerIdx ? 'vittoria' : 'sconfitta')
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e'] })
+            if (data.modalita === 'squadre') {
+              const snapTotals = calcTotalsSquadre(data.squadre, data.mani || []).map(t => t.total)
+              const winnerSi = snapTotals.indexOf(Math.max(...snapTotals))
+              const mySquadra = data.squadre.findIndex(s => s.players.some(p => p.uid === user?.uid))
+              playSound(mySquadra === winnerSi ? 'vittoria' : 'sconfitta')
+            } else {
+              const snapTotals = calcTotals(data.players, data.mani || []).map(t => t.total)
+              const snapWinnerIdx = snapTotals.indexOf(Math.max(...snapTotals))
+              const myIdx = data.players.findIndex(pl => pl.uid === user?.uid)
+              playSound(myIdx === snapWinnerIdx ? 'vittoria' : 'sconfitta')
+            }
             eraConclusa.current = true
           }
-          // Non sovrascrivere le mani locali con quelle di Firestore
           return { ...data, mani: prev.mani }
         })
       }
@@ -74,19 +90,28 @@ export default function Partita({ user, isGuest }) {
     return updated
   }
 
-if (!partita) return (
-  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <DenariLogo size={80} glow={true} />
-  </div>
-)
+  if (!partita) return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <DenariLogo size={80} glow={true} />
+    </div>
+  )
 
   const opzioni = partita.opzioni || { rebello: true, napoli: true }
   const mani = partita.mani || []
-  const totals = calcTotals(partita.players, mani)
-  const scores = totals.map(t => t.total)
-  const maxScore = Math.max(...scores)
-  const hasWinner = maxScore >= partita.target && mani.length > 0 && scores.filter(s => s === maxScore).length === 1
+
+  // --- Classica ---
+  const totals = !isSquadre ? calcTotals(partita.players, mani) : []
+  const scores = !isSquadre ? totals.map(t => t.total) : []
+  const maxScore = !isSquadre ? Math.max(...scores) : 0
+  const hasWinner = !isSquadre && maxScore >= partita.target && mani.length > 0 && scores.filter(s => s === maxScore).length === 1
   const winnerIdx = hasWinner ? scores.indexOf(maxScore) : -1
+
+  // --- Squadre ---
+  const totalsSquadre = isSquadre ? calcTotalsSquadre(partita.squadre, mani) : []
+  const scoresSquadre = isSquadre ? totalsSquadre.map(t => t.total) : []
+  const maxScoreSquadre = isSquadre ? Math.max(...scoresSquadre) : 0
+  const hasWinnerSquadre = isSquadre && maxScoreSquadre >= partita.target && mani.length > 0 && scoresSquadre.filter(s => s === maxScoreSquadre).length === 1
+  const winnerSquadraIdx = hasWinnerSquadre ? scoresSquadre.indexOf(maxScoreSquadre) : -1
 
   const puntiAttivi = PUNTI.filter(pt => {
     if (pt.key === 'rebello' && !opzioni.rebello) return false
@@ -95,7 +120,7 @@ if (!partita) return (
 
   const pills = [
     { key: 'carte', label: 'Carte' },
-    { key: 'denaro', label: 'Denari' },
+    { key: 'oro', label: 'Denari' },
     { key: 'settebello', label: '7♦' },
     ...(opzioni.rebello ? [{ key: 'rebello', label: 'R♦' }] : []),
     { key: 'primiera', label: 'Prim.' },
@@ -105,6 +130,7 @@ if (!partita) return (
 
   const counterFields = ['scope', ...(opzioni.napoli !== false ? ['napoli'] : [])]
 
+  // --- Classica helpers ---
   function isTakenByOther(pi, key) {
     return partita.players.some((_, otherPi) => otherPi !== pi && !!(current[otherPi]?.[key]))
   }
@@ -124,13 +150,9 @@ if (!partita) return (
       const current_val = cur[field] || 0
       const newVal = current_val + delta
       if (field === 'napoli') {
-        if (current_val === 0 && delta > 0) {
-          cur[field] = 3
-        } else if (newVal < 3) {
-          cur[field] = 0
-        } else {
-          cur[field] = Math.min(max, newVal)
-        }
+        if (current_val === 0 && delta > 0) cur[field] = 3
+        else if (newVal < 3) cur[field] = 0
+        else cur[field] = Math.min(max, newVal)
       } else {
         cur[field] = Math.min(max, Math.max(0, newVal))
       }
@@ -142,61 +164,134 @@ if (!partita) return (
     return partita.players.some((_, otherPi) => otherPi !== pi && (current[otherPi]?.napoli || 0) > 0)
   }
 
+  // --- Squadre helpers ---
+  function isTakenByOtherSquadra(si, key) {
+    return partita.squadre.some((_, otherSi) => otherSi !== si && !!(current[otherSi]?.[key]))
+  }
+
+  function togglePointSquadra(si, key) {
+    setCurrent(c => {
+      const cur = { ...(c[si] || {}) }
+      cur[key] = cur[key] ? 0 : 1
+      return { ...c, [si]: cur }
+    })
+  }
+
+  function changeCounterSquadra(si, field, delta) {
+    const max = field === 'napoli' ? 10 : field === 'scope' ? 18 : 999
+    setCurrent(c => {
+      const cur = { ...(c[si] || {}) }
+      const current_val = cur[field] || 0
+      const newVal = current_val + delta
+      if (field === 'napoli') {
+        if (current_val === 0 && delta > 0) cur[field] = 3
+        else if (newVal < 3) cur[field] = 0
+        else cur[field] = Math.min(max, newVal)
+      } else {
+        cur[field] = Math.min(max, Math.max(0, newVal))
+      }
+      return { ...c, [si]: cur }
+    })
+  }
+
+  function napoliPresoDaSquadra(si) {
+    return partita.squadre.some((_, otherSi) => otherSi !== si && (current[otherSi]?.napoli || 0) > 0)
+  }
+
+  // --- Confirm mano ---
   async function confirmMano() {
     const obbligatori = ['settebello', ...(opzioni.rebello ? ['rebello'] : [])]
-    for (const key of obbligatori) {
-      const assegnato = partita.players.some((_, pi) => !!(current[pi]?.[key]))
-      if (!assegnato) {
-        setError(`Assegna "${key === 'settebello' ? 'Sette bello' : 'Re bello'}" a uno dei giocatori.`)
-        return
+
+    if (isSquadre) {
+      for (const key of obbligatori) {
+        const assegnato = partita.squadre.some((_, si) => !!(current[si]?.[key]))
+        if (!assegnato) {
+          setError(`Assegna "${key === 'settebello' ? 'Sette bello' : 'Re bello'}" a una delle squadre.`)
+          return
+        }
+      }
+    } else {
+      for (const key of obbligatori) {
+        const assegnato = partita.players.some((_, pi) => !!(current[pi]?.[key]))
+        if (!assegnato) {
+          setError(`Assegna "${key === 'settebello' ? 'Sette bello' : 'Re bello'}" a uno dei giocatori.`)
+          return
+        }
       }
     }
+
     if (navigator.vibrate) navigator.vibrate(50)
     setError('')
 
     const mano = {}
-    partita.players.forEach((_, pi) => {
-      const cur = current[pi] || {}
-      const total = puntiAttivi.reduce((s, pt) => s + (cur[pt.key] || 0), 0)
-        + (cur.scope || 0)
-        + (opzioni.napoli !== false ? (cur.napoli || 0) : 0)
-      mano[pi] = { ...cur, total }
-    })
+
+    if (isSquadre) {
+      partita.squadre.forEach((_, si) => {
+        const cur = current[si] || {}
+        const total = puntiAttivi.reduce((s, pt) => s + (cur[pt.key] || 0), 0)
+          + (cur.scope || 0)
+          + (opzioni.napoli !== false ? (cur.napoli || 0) : 0)
+        mano[si] = { ...cur, total }
+      })
+    } else {
+      partita.players.forEach((_, pi) => {
+        const cur = current[pi] || {}
+        const total = puntiAttivi.reduce((s, pt) => s + (cur[pt.key] || 0), 0)
+          + (cur.scope || 0)
+          + (opzioni.napoli !== false ? (cur.napoli || 0) : 0)
+        mano[pi] = { ...cur, total }
+      })
+    }
 
     const nuoveMani = [...mani, mano]
-    const nuoviScores = calcTotals(partita.players, nuoveMani).map(t => t.total)
-    const nuovoMax = Math.max(...nuoviScores)
-    const conclusa = nuovoMax >= partita.target && nuoviScores.filter(s => s === nuovoMax).length === 1
+
+    let conclusa = false
+    if (isSquadre) {
+      const nuoviScores = calcTotalsSquadre(partita.squadre, nuoveMani).map(t => t.total)
+      const nuovoMax = Math.max(...nuoviScores)
+      conclusa = nuovoMax >= partita.target && nuoviScores.filter(s => s === nuovoMax).length === 1
+    } else {
+      const nuoviScores = calcTotals(partita.players, nuoveMani).map(t => t.total)
+      const nuovoMax = Math.max(...nuoviScores)
+      conclusa = nuovoMax >= partita.target && nuoviScores.filter(s => s === nuovoMax).length === 1
+    }
 
     if (isGuest) {
-      const updated = updatePartitaLocale({ mani: nuoveMani, conclusa })
+      updatePartitaLocale({ mani: nuoveMani, conclusa })
       if (conclusa) {
         setShowVittoria(true)
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e'] })
-        const nuoviTotals = calcTotals(partita.players, nuoveMani).map(t => t.total)
-        const nuovoWinnerIdx = nuoviTotals.indexOf(Math.max(...nuoviTotals))
-        const myIdx = partita.players.findIndex(pl => pl.uid === user?.uid)
-        playSound(myIdx === nuovoWinnerIdx ? 'vittoria' : 'sconfitta')
+        if (isSquadre) {
+          const nuoviTotals = calcTotalsSquadre(partita.squadre, nuoveMani).map(t => t.total)
+          const winnerSi = nuoviTotals.indexOf(Math.max(...nuoviTotals))
+          const mySquadra = partita.squadre.findIndex(s => s.players.some(p => p.uid === user?.uid))
+          playSound(mySquadra === winnerSi ? 'vittoria' : 'sconfitta')
+        } else {
+          const nuoviTotals = calcTotals(partita.players, nuoveMani).map(t => t.total)
+          const nuovoWinnerIdx = nuoviTotals.indexOf(Math.max(...nuoviTotals))
+          const myIdx = partita.players.findIndex(pl => pl.uid === user?.uid)
+          playSound(myIdx === nuovoWinnerIdx ? 'vittoria' : 'sconfitta')
+        }
       }
     } else {
-      // Salva in localStorage durante la partita
       localStorage.setItem(LOCAL_KEY, JSON.stringify({ mani: nuoveMani }))
       setPartita(prev => ({ ...prev, mani: nuoveMani, conclusa }))
-
-      // Scrivi su Firestore SOLO a fine partita
       if (conclusa) {
         localStorage.removeItem(LOCAL_KEY)
-        await updateDoc(doc(db, 'partite', id), {
-          mani: nuoveMani,
-          conclusa: true,
-          conclusaAt: serverTimestamp()
-        })
+        await updateDoc(doc(db, 'partite', id), { mani: nuoveMani, conclusa: true, conclusaAt: serverTimestamp() })
         setShowVittoria(true)
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#c9963a', '#e8b84b', '#f5f0e8', '#4caf6e'] })
-        const nuoviTotals = calcTotals(partita.players, nuoveMani).map(t => t.total)
-        const nuovoWinnerIdx = nuoviTotals.indexOf(Math.max(...nuoviTotals))
-        const myIdx = partita.players.findIndex(pl => pl.uid === user?.uid)
-        playSound(myIdx === nuovoWinnerIdx ? 'vittoria' : 'sconfitta')
+        if (isSquadre) {
+          const nuoviTotals = calcTotalsSquadre(partita.squadre, nuoveMani).map(t => t.total)
+          const winnerSi = nuoviTotals.indexOf(Math.max(...nuoviTotals))
+          const mySquadra = partita.squadre.findIndex(s => s.players.some(p => p.uid === user?.uid))
+          playSound(mySquadra === winnerSi ? 'vittoria' : 'sconfitta')
+        } else {
+          const nuoviTotals = calcTotals(partita.players, nuoveMani).map(t => t.total)
+          const nuovoWinnerIdx = nuoviTotals.indexOf(Math.max(...nuoviTotals))
+          const myIdx = partita.players.findIndex(pl => pl.uid === user?.uid)
+          playSound(myIdx === nuovoWinnerIdx ? 'vittoria' : 'sconfitta')
+        }
       }
     }
 
@@ -226,6 +321,15 @@ if (!partita) return (
     setShowReset(false)
   }
 
+  // Vincitore per il modale
+  const nomeVincitore = isSquadre
+    ? partita.squadre[winnerSquadraIdx]?.nome
+    : partita.players[winnerIdx]?.name
+  const riepilogoVincitore = isSquadre
+    ? scoresSquadre.map((s, i) => `${partita.squadre[i].nome}: ${s}`).join(' · ')
+    : scores.map((s, i) => `${partita.players[i].name}: ${s}`).join(' · ')
+  const hasAnyWinner = isSquadre ? winnerSquadraIdx !== -1 : winnerIdx !== -1
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingTop: 'var(--safe-top)' }}>
 
@@ -248,14 +352,14 @@ if (!partita) return (
         </Modal>
       )}
 
-      {showVittoria && partita.conclusa && winnerIdx !== -1 && (
+      {showVittoria && partita.conclusa && hasAnyWinner && (
         <Modal>
           <div style={{ fontSize: '48px', marginBottom: '12px' }}>🏆</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--gold)', marginBottom: '8px' }}>
-            {partita.players[winnerIdx].name} ha vinto!
+            {nomeVincitore} ha vinto!
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>
-            {scores.map((s, i) => `${partita.players[i].name}: ${s}`).join(' · ')}
+            {riepilogoVincitore}
           </div>
           {isGuest && (
             <div style={{ fontSize: '12px', color: 'var(--gold)', marginBottom: '16px', padding: '10px', background: 'rgba(201,150,58,0.1)', borderRadius: 'var(--radius-md)' }}>
@@ -282,10 +386,7 @@ if (!partita) return (
         </Modal>
       )}
 
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 16px', borderBottom: '1px solid var(--ink-muted)', flexShrink: 0
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--ink-muted)', flexShrink: 0 }}>
         <button onClick={() => navigate('/')} style={backBtn}>←</button>
         <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', color: 'var(--cream)' }}>
           {partita.conclusa ? '🏆 Partita conclusa' : `Mano ${mani.length + 1}`}
@@ -309,46 +410,86 @@ if (!partita) return (
 
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 16px calc(16px + var(--safe-bottom))' }}>
 
+        {/* TAB PUNTEGGIO */}
         {tab === 'punteggio' && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: partita.players.length > 2 ? '1fr 1fr' : '1fr', gap: '12px', marginBottom: '16px' }}>
-              {partita.players.map((p, pi) => {
-                const t = totals[pi]
-                const isWinner = winnerIdx === pi
-                const pct = Math.min(100, Math.round((t.total / partita.target) * 100))
-                return (
-                  <div key={pi} style={{
-                    background: 'var(--ink-soft)',
-                    border: `${isWinner ? '2px' : '1px'} solid ${isWinner ? 'var(--gold)' : 'var(--ink-muted)'}`,
-                    borderRadius: 'var(--radius-lg)', padding: '16px', position: 'relative', overflow: 'hidden'
-                  }}>
-                    {isWinner && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold))' }} />}
-                    {isWinner && <span style={{ position: 'absolute', top: '12px', right: '12px', background: 'var(--gold)', color: 'var(--ink)', fontSize: '10px', fontWeight: '500', padding: '3px 8px', borderRadius: '20px', letterSpacing: '0.05em' }}>VINCITORE</span>}
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: 'var(--cream)', marginBottom: '8px' }}>{p.name}</div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '10px' }}>
-                      <span style={{ fontFamily: 'var(--font-display)', fontSize: '36px', color: isWinner ? 'var(--gold)' : 'var(--cream)', lineHeight: 1 }}>{t.total}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>/ {partita.target}</span>
+            {isSquadre ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+                {partita.squadre.map((squadra, si) => {
+                  const t = totalsSquadre[si]
+                  const isWinner = winnerSquadraIdx === si
+                  const pct = Math.min(100, Math.round((t.total / partita.target) * 100))
+                  return (
+                    <div key={si} style={{
+                      background: 'var(--ink-soft)',
+                      border: `${isWinner ? '2px' : '1px'} solid ${isWinner ? 'var(--gold)' : 'var(--ink-muted)'}`,
+                      borderRadius: 'var(--radius-lg)', padding: '16px', position: 'relative', overflow: 'hidden'
+                    }}>
+                      {isWinner && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold))' }} />}
+                      {isWinner && <span style={{ position: 'absolute', top: '12px', right: '12px', background: 'var(--gold)', color: 'var(--ink)', fontSize: '10px', fontWeight: '500', padding: '3px 8px', borderRadius: '20px', letterSpacing: '0.05em' }}>VINCITORE</span>}
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: 'var(--cream)', marginBottom: '4px' }}>{squadra.nome}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-faint)', marginBottom: '8px' }}>
+                        {squadra.players.map(p => p.name).join(' · ')}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '10px' }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: '36px', color: isWinner ? 'var(--gold)' : 'var(--cream)', lineHeight: 1 }}>{t.total}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>/ {partita.target}</span>
+                      </div>
+                      <div style={{ height: '3px', background: 'var(--ink-muted)', borderRadius: '2px', marginBottom: '10px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: isWinner ? 'var(--success)' : 'linear-gradient(90deg, var(--gold), var(--gold-light))', borderRadius: '2px', transition: 'width 0.4s ease' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                        {pills.map(pill => (
+                          <div key={pill.key} style={{ background: 'var(--ink-muted)', borderRadius: '20px', padding: '3px 9px', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '4px' }}>
+                            {pill.label} <b style={{ color: 'var(--cream)', fontWeight: '500' }}>{t[pill.key] || 0}</b>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div style={{ height: '3px', background: 'var(--ink-muted)', borderRadius: '2px', marginBottom: '10px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: isWinner ? 'var(--success)' : 'linear-gradient(90deg, var(--gold), var(--gold-light))', borderRadius: '2px', transition: 'width 0.4s ease' }} />
+                  )
+                })}
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: partita.players.length > 2 ? '1fr 1fr' : '1fr', gap: '12px', marginBottom: '16px' }}>
+                {partita.players.map((p, pi) => {
+                  const t = totals[pi]
+                  const isWinner = winnerIdx === pi
+                  const pct = Math.min(100, Math.round((t.total / partita.target) * 100))
+                  return (
+                    <div key={pi} style={{
+                      background: 'var(--ink-soft)',
+                      border: `${isWinner ? '2px' : '1px'} solid ${isWinner ? 'var(--gold)' : 'var(--ink-muted)'}`,
+                      borderRadius: 'var(--radius-lg)', padding: '16px', position: 'relative', overflow: 'hidden'
+                    }}>
+                      {isWinner && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold))' }} />}
+                      {isWinner && <span style={{ position: 'absolute', top: '12px', right: '12px', background: 'var(--gold)', color: 'var(--ink)', fontSize: '10px', fontWeight: '500', padding: '3px 8px', borderRadius: '20px', letterSpacing: '0.05em' }}>VINCITORE</span>}
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: 'var(--cream)', marginBottom: '8px' }}>{p.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '10px' }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: '36px', color: isWinner ? 'var(--gold)' : 'var(--cream)', lineHeight: 1 }}>{t.total}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>/ {partita.target}</span>
+                      </div>
+                      <div style={{ height: '3px', background: 'var(--ink-muted)', borderRadius: '2px', marginBottom: '10px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: isWinner ? 'var(--success)' : 'linear-gradient(90deg, var(--gold), var(--gold-light))', borderRadius: '2px', transition: 'width 0.4s ease' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                        {pills.map(pill => (
+                          <div key={pill.key} style={{ background: 'var(--ink-muted)', borderRadius: '20px', padding: '3px 9px', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '4px' }}>
+                            {pill.label} <b style={{ color: 'var(--cream)', fontWeight: '500' }}>{t[pill.key] || 0}</b>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                      {pills.map(pill => (
-                        <div key={pill.key} style={{ background: 'var(--ink-muted)', borderRadius: '20px', padding: '3px 9px', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '4px' }}>
-                          {pill.label} <b style={{ color: 'var(--cream)', fontWeight: '500' }}>{t[pill.key] || 0}</b>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )}
             {!partita.conclusa && (
               <button className="btn-gold" onClick={() => setTab('mano')}>Registra mano →</button>
             )}
           </>
         )}
 
+        {/* TAB NUOVA MANO */}
         {tab === 'mano' && (
           <div className="card">
             <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--ink-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -356,58 +497,114 @@ if (!partita) return (
               <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>Seleziona i punti vinti</span>
             </div>
 
-            {partita.players.map((p, pi) => {
-              const cur = current[pi] || {}
-              return (
-                <div key={pi} style={{ padding: '14px 18px', borderBottom: '1px solid var(--ink-muted)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '500', letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px' }}>{p.name}</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                    {puntiAttivi.map(pt => {
-                      const on = !!cur[pt.key]
-                      const disabled = !on && isTakenByOther(pi, pt.key)
-                      return (
-                        <button key={pt.key} onClick={() => !disabled && togglePoint(pi, pt.key)} disabled={disabled} style={{
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          padding: '11px 13px', borderRadius: '12px', fontSize: '13px',
-                          background: on ? 'rgba(201,150,58,0.12)' : 'var(--ink-muted)',
-                          border: `1px solid ${on ? 'var(--gold)' : 'transparent'}`,
-                          color: on ? 'var(--gold-light)' : 'var(--text-muted)',
-                          opacity: disabled ? 0.3 : 1, cursor: disabled ? 'not-allowed' : 'pointer',
-                          textAlign: 'left'
-                        }}>
-                          <span style={{
-                            width: '16px', height: '16px', borderRadius: '50%', flexShrink: 0,
-                            border: `1.5px solid ${on ? 'var(--gold)' : 'var(--text-faint)'}`,
-                            background: on ? 'var(--gold)' : 'transparent',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+            {isSquadre ? (
+              partita.squadre.map((squadra, si) => {
+                const cur = current[si] || {}
+                return (
+                  <div key={si} style={{ padding: '14px 18px', borderBottom: '1px solid var(--ink-muted)' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '500', letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '4px' }}>{squadra.nome}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-faint)', marginBottom: '12px' }}>{squadra.players.map(p => p.name).join(' · ')}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                      {puntiAttivi.map(pt => {
+                        const on = !!cur[pt.key]
+                        const disabled = !on && isTakenByOtherSquadra(si, pt.key)
+                        return (
+                          <button key={pt.key} onClick={() => !disabled && togglePointSquadra(si, pt.key)} disabled={disabled} style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '11px 13px', borderRadius: '12px', fontSize: '13px',
+                            background: on ? 'rgba(201,150,58,0.12)' : 'var(--ink-muted)',
+                            border: `1px solid ${on ? 'var(--gold)' : 'transparent'}`,
+                            color: on ? 'var(--gold-light)' : 'var(--text-muted)',
+                            opacity: disabled ? 0.3 : 1, cursor: disabled ? 'not-allowed' : 'pointer',
+                            textAlign: 'left'
                           }}>
-                            {on && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--ink)' }} />}
-                          </span>
-                          {pt.label}
-                        </button>
+                            <span style={{
+                              width: '16px', height: '16px', borderRadius: '50%', flexShrink: 0,
+                              border: `1.5px solid ${on ? 'var(--gold)' : 'var(--text-faint)'}`,
+                              background: on ? 'var(--gold)' : 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                              {on && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--ink)' }} />}
+                            </span>
+                            {pt.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {counterFields.map(field => {
+                      const isNapoli = field === 'napoli'
+                      const napoliBloccato = isNapoli && napoliPresoDaSquadra(si)
+                      return (
+                        <div key={field} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', opacity: napoliBloccato ? 0.3 : 1 }}>
+                          <div>
+                            <span style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{field}</span>
+                            {isNapoli && <span style={{ fontSize: '11px', color: 'var(--text-faint)', marginLeft: '6px' }}>min. 3</span>}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                            <button onClick={() => !napoliBloccato && changeCounterSquadra(si, field, -1)} style={stepBtn} disabled={napoliBloccato}>−</button>
+                            <span style={{ width: '38px', textAlign: 'center', fontSize: '15px', fontWeight: '500', color: 'var(--cream)', borderLeft: '1px solid var(--ink-soft)', borderRight: '1px solid var(--ink-soft)', lineHeight: '38px' }}>{cur[field] || 0}</span>
+                            <button onClick={() => !napoliBloccato && changeCounterSquadra(si, field, 1)} style={stepBtn} disabled={napoliBloccato}>+</button>
+                          </div>
+                        </div>
                       )
                     })}
                   </div>
-                  {counterFields.map(field => {
-                    const isNapoli = field === 'napoli'
-                    const napoliBloccato = isNapoli && napoliPresoDA(pi)
-                    return (
-                      <div key={field} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', opacity: napoliBloccato ? 0.3 : 1 }}>
-                        <div>
-                          <span style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{field}</span>
-                          {isNapoli && <span style={{ fontSize: '11px', color: 'var(--text-faint)', marginLeft: '6px' }}>min. 3</span>}
+                )
+              })
+            ) : (
+              partita.players.map((p, pi) => {
+                const cur = current[pi] || {}
+                return (
+                  <div key={pi} style={{ padding: '14px 18px', borderBottom: '1px solid var(--ink-muted)' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '500', letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px' }}>{p.name}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                      {puntiAttivi.map(pt => {
+                        const on = !!cur[pt.key]
+                        const disabled = !on && isTakenByOther(pi, pt.key)
+                        return (
+                          <button key={pt.key} onClick={() => !disabled && togglePoint(pi, pt.key)} disabled={disabled} style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '11px 13px', borderRadius: '12px', fontSize: '13px',
+                            background: on ? 'rgba(201,150,58,0.12)' : 'var(--ink-muted)',
+                            border: `1px solid ${on ? 'var(--gold)' : 'transparent'}`,
+                            color: on ? 'var(--gold-light)' : 'var(--text-muted)',
+                            opacity: disabled ? 0.3 : 1, cursor: disabled ? 'not-allowed' : 'pointer',
+                            textAlign: 'left'
+                          }}>
+                            <span style={{
+                              width: '16px', height: '16px', borderRadius: '50%', flexShrink: 0,
+                              border: `1.5px solid ${on ? 'var(--gold)' : 'var(--text-faint)'}`,
+                              background: on ? 'var(--gold)' : 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                              {on && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--ink)' }} />}
+                            </span>
+                            {pt.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {counterFields.map(field => {
+                      const isNapoli = field === 'napoli'
+                      const napoliBloccato = isNapoli && napoliPresoDA(pi)
+                      return (
+                        <div key={field} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', opacity: napoliBloccato ? 0.3 : 1 }}>
+                          <div>
+                            <span style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{field}</span>
+                            {isNapoli && <span style={{ fontSize: '11px', color: 'var(--text-faint)', marginLeft: '6px' }}>min. 3</span>}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                            <button onClick={() => !napoliBloccato && changeCounter(pi, field, -1)} style={stepBtn} disabled={napoliBloccato}>−</button>
+                            <span style={{ width: '38px', textAlign: 'center', fontSize: '15px', fontWeight: '500', color: 'var(--cream)', borderLeft: '1px solid var(--ink-soft)', borderRight: '1px solid var(--ink-soft)', lineHeight: '38px' }}>{cur[field] || 0}</span>
+                            <button onClick={() => !napoliBloccato && changeCounter(pi, field, 1)} style={stepBtn} disabled={napoliBloccato}>+</button>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-                          <button onClick={() => !napoliBloccato && changeCounter(pi, field, -1)} style={stepBtn} disabled={napoliBloccato}>−</button>
-                          <span style={{ width: '38px', textAlign: 'center', fontSize: '15px', fontWeight: '500', color: 'var(--cream)', borderLeft: '1px solid var(--ink-soft)', borderRight: '1px solid var(--ink-soft)', lineHeight: '38px' }}>{cur[field] || 0}</span>
-                          <button onClick={() => !napoliBloccato && changeCounter(pi, field, 1)} style={stepBtn} disabled={napoliBloccato}>+</button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
+                      )
+                    })}
+                  </div>
+                )
+              })
+            )}
 
             <button className="btn-gold" onClick={confirmMano} style={{ borderRadius: 0, borderTop: '1px solid var(--ink-muted)' }}>
               Conferma mano {mani.length + 1}
@@ -415,11 +612,12 @@ if (!partita) return (
           </div>
         )}
 
+        {/* TAB STORICO */}
         {tab === 'storico' && (
           mani.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-faint)' }}>
               <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'center' }}>
-               <DenariLogo size={48} glow={false} />
+                <DenariLogo size={48} glow={false} />
               </div>
               <p style={{ color: 'var(--text-muted)' }}>Nessuna mano ancora</p>
             </div>
@@ -434,9 +632,14 @@ if (!partita) return (
                   <div key={mi} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', borderBottom: rmi < mani.length - 1 ? '1px solid var(--ink-muted)' : 'none', fontSize: '14px' }}>
                     <span style={{ fontWeight: '500', color: 'var(--cream)', minWidth: '60px' }}>Mano {mi + 1}</span>
                     <div style={{ display: 'flex', gap: '14px', color: 'var(--text-muted)', fontSize: '13px', flex: 1, flexWrap: 'wrap' }}>
-                      {partita.players.map((p, pi) => (
-                        <span key={pi}>{p.name}: <b style={{ color: 'var(--cream)', fontWeight: '500' }}>{m[pi]?.total || 0}</b></span>
-                      ))}
+                      {isSquadre
+                        ? partita.squadre.map((s, si) => (
+                          <span key={si}>{s.nome}: <b style={{ color: 'var(--cream)', fontWeight: '500' }}>{m[si]?.total || 0}</b></span>
+                        ))
+                        : partita.players.map((p, pi) => (
+                          <span key={pi}>{p.name}: <b style={{ color: 'var(--cream)', fontWeight: '500' }}>{m[pi]?.total || 0}</b></span>
+                        ))
+                      }
                     </div>
                     <button onClick={() => setDeletingMano(mi)} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: '16px', padding: '4px 6px' }}>✕</button>
                   </div>
