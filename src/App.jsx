@@ -21,6 +21,7 @@ import { db } from './firebase'
 import SplashScreen from './components/SplashScreen'
 import DenariLogo from './components/DenariLogo'
 import { App as CapacitorApp } from '@capacitor/app'
+import Consenso from './pages/Consenso'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
@@ -128,11 +129,14 @@ export default function App() {
       <OfflineBanner />
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-        <Route path="/" element={
-          localStorage.getItem('onboarding-done')
-            ? <Home user={user} isGuest={isGuest} />
-            : <Navigate to="/onboarding" />
-        } />
+        <Route path="/consenso" element={<Consenso />} />
+<Route path="/" element={
+  !localStorage.getItem('consenso-accettato')
+    ? <Navigate to="/consenso" />
+    : localStorage.getItem('onboarding-done')
+      ? <Home user={user} isGuest={isGuest} />
+      : <Navigate to="/onboarding" />
+} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/nuova-partita" element={<NuovaPartita user={user} isGuest={isGuest} />} />
         <Route path="/partita/:id" element={<Partita user={user} isGuest={isGuest} />} />

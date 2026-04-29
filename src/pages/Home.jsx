@@ -165,12 +165,12 @@ function PartitaCard({ partita, user, onClick, onDelete }) {
   const winnerSquadraIdx = isSquadre && partita.conclusa && scoresSquadre.filter(s => s === maxScoreSquadre).length === 1
     ? scoresSquadre.indexOf(maxScoreSquadre) : -1
 
-  // Modalità classica
-  const players = isSquadre ? [] : [...partita.players].sort((a, b) =>
-    (b.uid === user?.uid) - (a.uid === user?.uid)
-  )
-  const totals = isSquadre ? [] : calcTotals(players, partita.mani || [])
-  const scores = totals.map(t => t.total)
+  // Modalità classica — mantieni indice originale per i punteggi
+  const allTotals = isSquadre ? [] : calcTotals(partita.players, partita.mani || [])
+  const players = isSquadre ? [] : partita.players
+    .map((p, originalIdx) => ({ ...p, originalIdx }))
+    .sort((a, b) => (b.uid === user?.uid) - (a.uid === user?.uid))
+  const scores = players.map(p => allTotals[p.originalIdx]?.total || 0)
   const maxScore = scores.length > 0 ? Math.max(...scores) : 0
   const winnerIdx = !isSquadre && partita.conclusa && scores.filter(s => s === maxScore).length === 1
     ? scores.indexOf(maxScore) : -1
