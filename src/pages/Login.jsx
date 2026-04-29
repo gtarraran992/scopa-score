@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { signInWithPopup, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth'
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { getPartiteLocali, clearPartiteLocali } from '../localDB'
@@ -6,6 +6,7 @@ import { auth, googleProvider, db } from '../firebase'
 import { Capacitor } from '@capacitor/core'
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 import DenariLogo from '../components/DenariLogo'
+import { useTranslation } from 'react-i18next'
 
 async function saveUserToDb(user) {
   const ref = doc(db, 'users', user.uid)
@@ -40,6 +41,7 @@ async function migraPartiteLocali(user) {
 }
 
 export default function Login() {
+  const { t } = useTranslation()
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -64,7 +66,7 @@ export default function Login() {
       }
     } catch (e) {
       console.error(e)
-      setError('Errore con Google. Riprova.')
+      setError(t('login.erroreGoogle'))
     }
     setLoading(false)
   }
@@ -89,13 +91,13 @@ export default function Login() {
       }
     } catch (e) {
       if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
-        setError('Email o password errati.')
+        setError(t('login.emailErrata'))
       } else if (e.code === 'auth/email-already-in-use') {
-        setError('Email già registrata.')
+        setError(t('login.emailUsata'))
       } else if (e.code === 'auth/weak-password') {
-        setError('Password troppo corta (min. 6 caratteri).')
+        setError(t('login.passwordCorta'))
       } else {
-        setError('Errore. Riprova.')
+        setError(t('login.errore'))
       }
     }
     setLoading(false)
@@ -103,7 +105,7 @@ export default function Login() {
 
   async function handleResetPassword() {
     if (!email.trim()) {
-      setError('Inserisci la tua email per reimpostare la password.')
+      setError(t('login.emailReset'))
       return
     }
     setLoading(true)
@@ -112,7 +114,7 @@ export default function Login() {
       await sendPasswordResetEmail(auth, email.trim())
       setResetSent(true)
     } catch (e) {
-      setError('Email non trovata. Controlla di aver inserito l\'email corretta.')
+      setError(t('login.emailNonTrovata'))
     }
     setLoading(false)
   }
@@ -123,20 +125,20 @@ export default function Login() {
       alignItems: 'center', justifyContent: 'center',
       padding: '32px 24px', background: 'var(--ink)'
     }}>
-<div style={{ marginBottom: '32px', textAlign: 'center' }}>
-  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
-  <DenariLogo size={80} glow={true} />
-  </div>
-  <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', color: 'var(--cream)' }}>Scopa</h1>
-  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>Il segnapunti per la scopa</p>
-</div>
+      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+          <DenariLogo size={80} glow={true} />
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', color: 'var(--cream)' }}>Scopa</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>{t('login.sottotitolo')}</p>
+      </div>
 
       <div style={{ width: '100%', maxWidth: '360px' }}>
         <button onClick={() => window.history.back()} style={{
           background: 'none', border: 'none', color: 'var(--text-faint)',
           fontSize: '13px', marginBottom: '16px', cursor: 'pointer', padding: 0
         }}>
-          ← Continua come ospite
+          ← {t('login.continua')}
         </button>
 
         <button onClick={handleGoogle} disabled={loading} style={{
@@ -151,28 +153,27 @@ export default function Login() {
             <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
           </svg>
-          Continua con Google
+          {t('login.google')}
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--ink-muted)' }} />
-          <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>oppure</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{t('login.oppure')}</span>
           <div style={{ flex: 1, height: '1px', background: 'var(--ink-muted)' }} />
         </div>
 
         {mode === 'register' && (
-          <input placeholder="Nome visualizzato" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
+          <input placeholder={t('login.nome')} value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
         )}
 
-        <input placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
-        <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }} />
+        <input placeholder={t('login.email')} type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
+        <input placeholder={t('login.password')} type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }} />
 
-        {/* Password dimenticata — solo in modalità login */}
         {mode === 'login' && (
           <div style={{ textAlign: 'right', marginBottom: '20px' }}>
             {resetSent ? (
               <span style={{ fontSize: '12px', color: 'var(--success)' }}>
-                ✓ Email inviata! Controlla la tua casella.
+                {t('login.emailInviata')}
               </span>
             ) : (
               <button onClick={handleResetPassword} disabled={loading} style={{
@@ -180,7 +181,7 @@ export default function Login() {
                 color: 'var(--text-faint)', fontSize: '12px',
                 cursor: 'pointer', padding: 0
               }}>
-                Password dimenticata?
+                {t('login.passwordDimenticata')}
               </button>
             )}
           </div>
@@ -193,11 +194,11 @@ export default function Login() {
         )}
 
         <button onClick={handleEmail} disabled={loading} className="btn-gold" style={{ marginBottom: '12px' }}>
-          {loading ? '...' : mode === 'login' ? 'Accedi' : 'Registrati'}
+          {loading ? '...' : mode === 'login' ? t('login.accedi') : t('login.registrati')}
         </button>
 
         <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); setResetSent(false) }} className="btn-ghost">
-          {mode === 'login' ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi'}
+          {mode === 'login' ? t('login.nonHaiAccount') : t('login.haiAccount')}
         </button>
       </div>
     </div>

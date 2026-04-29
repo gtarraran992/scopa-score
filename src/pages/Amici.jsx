@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
+import { useTranslation } from 'react-i18next'
 
 export default function Amici({ user }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [amici, setAmici] = useState([])
   const [search, setSearch] = useState('')
@@ -11,28 +13,23 @@ export default function Amici({ user }) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
-useEffect(() => {
-  let unsubAmici = null
-
-  const unsubUser = onSnapshot(doc(db, 'users', user.uid), snap => {
-    const data = snap.data()
-    
-    // Cancella il listener precedente degli amici
-    if (unsubAmici) unsubAmici()
-    
-    if (data?.friends?.length > 0) {
-      const q = query(collection(db, 'users'), where('uid', 'in', data.friends))
-      unsubAmici = onSnapshot(q, s => setAmici(s.docs.map(d => d.data())))
-    } else {
-      setAmici([])
+  useEffect(() => {
+    let unsubAmici = null
+    const unsubUser = onSnapshot(doc(db, 'users', user.uid), snap => {
+      const data = snap.data()
+      if (unsubAmici) unsubAmici()
+      if (data?.friends?.length > 0) {
+        const q = query(collection(db, 'users'), where('uid', 'in', data.friends))
+        unsubAmici = onSnapshot(q, s => setAmici(s.docs.map(d => d.data())))
+      } else {
+        setAmici([])
+      }
+    })
+    return () => {
+      unsubUser()
+      if (unsubAmici) unsubAmici()
     }
-  })
-
-  return () => {
-    unsubUser()
-    if (unsubAmici) unsubAmici()
-  }
-}, [user.uid])
+  }, [user.uid])
 
   async function searchUsers() {
     if (!search.trim()) return
@@ -42,39 +39,34 @@ useEffect(() => {
     const snap = await getDocs(q)
     const found = snap.docs.map(d => d.data()).filter(u => u.uid !== user.uid)
     setResults(found)
-    if (found.length === 0) setMessage('Nessun utente trovato.')
+    if (found.length === 0) setMessage(t('amici.nessunoTrovato'))
     else setMessage('')
     setLoading(false)
   }
 
-async function addAmico(amico) {
-  // Aggiunge l'amico nel tuo documento
-  await updateDoc(doc(db, 'users', user.uid), { friends: arrayUnion(amico.uid) })
-  // Aggiunge te nel documento dell'amico (reciproco)
-  await updateDoc(doc(db, 'users', amico.uid), { friends: arrayUnion(user.uid) })
-  setResults([])
-  setSearch('')
-  setMessage(`${amico.displayName} aggiunto agli amici!`)
-}
+  async function addAmico(amico) {
+    await updateDoc(doc(db, 'users', user.uid), { friends: arrayUnion(amico.uid) })
+    await updateDoc(doc(db, 'users', amico.uid), { friends: arrayUnion(user.uid) })
+    setResults([])
+    setSearch('')
+    setMessage(t('amici.aggiunto', { nome: amico.displayName }))
+  }
 
-async function removeAmico(amico) {
-  // Rimuove da entrambi i documenti
-  await updateDoc(doc(db, 'users', user.uid), { friends: arrayRemove(amico.uid) })
-  await updateDoc(doc(db, 'users', amico.uid), { friends: arrayRemove(user.uid) })
-}
+  async function removeAmico(amico) {
+    await updateDoc(doc(db, 'users', user.uid), { friends: arrayRemove(amico.uid) })
+    await updateDoc(doc(db, 'users', amico.uid), { friends: arrayRemove(user.uid) })
+  }
 
   const friendUids = amici.map(a => a.uid)
 
   return (
     <div className="page">
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
         <button onClick={() => navigate('/')} style={backBtn}>←</button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--cream)' }}>Amici</h1>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--cream)' }}>{t('amici.titolo')}</h1>
       </div>
 
-      {/* Cerca */}
-      <div style={sectionTitle}>Cerca per email</div>
+      <div style={sectionTitle}>{t('amici.cercaEmail')}</div>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
         <input
           value={search}
@@ -94,7 +86,7 @@ async function removeAmico(amico) {
           border: 'none', borderRadius: 'var(--radius-md)',
           color: 'var(--ink)', fontWeight: '500', fontSize: '14px'
         }}>
-          {loading ? '...' : 'Cerca'}
+          {loading ? '...' : t('amici.cerca')}
         </button>
       </div>
 
@@ -104,7 +96,6 @@ async function removeAmico(amico) {
         </div>
       )}
 
-      {/* Risultati ricerca */}
       {results.length > 0 && (
         <div className="card" style={{ marginBottom: '24px' }}>
           {results.map(u => (
@@ -114,14 +105,14 @@ async function removeAmico(amico) {
                 <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{u.email}</div>
               </div>
               {friendUids.includes(u.uid) ? (
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Già amico</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('amici.giaAmico')}</span>
               ) : (
                 <button onClick={() => addAmico(u)} style={{
                   background: 'linear-gradient(135deg, var(--gold), var(--gold-light))',
                   border: 'none', borderRadius: 'var(--radius-md)',
                   padding: '8px 14px', color: 'var(--ink)', fontSize: '13px', fontWeight: '500'
                 }}>
-                  + Aggiungi
+                  {t('amici.aggiungi')}
                 </button>
               )}
             </div>
@@ -129,13 +120,12 @@ async function removeAmico(amico) {
         </div>
       )}
 
-      {/* Lista amici */}
-      <div style={sectionTitle}>I tuoi amici</div>
+      <div style={sectionTitle}>{t('amici.iTuoiAmici')}</div>
       {amici.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-faint)' }}>
           <div style={{ fontSize: '36px', marginBottom: '10px' }}>👥</div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Nessun amico ancora</p>
-          <p style={{ fontSize: '12px', marginTop: '6px' }}>Cercali per email</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('amici.nessunoAmico')}</p>
+          <p style={{ fontSize: '12px', marginTop: '6px' }}>{t('amici.cercaPerEmail')}</p>
         </div>
       ) : (
         <div className="card">
@@ -164,7 +154,7 @@ async function removeAmico(amico) {
                 borderRadius: 'var(--radius-md)', padding: '6px 12px',
                 color: 'var(--text-faint)', fontSize: '12px'
               }}>
-                Rimuovi
+                {t('amici.rimuovi')}
               </button>
             </div>
           ))}

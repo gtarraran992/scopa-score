@@ -5,8 +5,10 @@ import { db, auth } from '../firebase'
 import { signOut, updateProfile, deleteUser } from 'firebase/auth'
 import { calcTotals } from '../config'
 import { version } from '../../package.json'
+import { useTranslation } from 'react-i18next'
 
 export default function Profilo({ user }) {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [nome, setNome] = useState(user.displayName || '')
   const [saving, setSaving] = useState(false)
@@ -18,11 +20,23 @@ export default function Profilo({ user }) {
     if (saved) return saved
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'green'
   })
+  const [lingua, setLingua] = useState(() => {
+    return localStorage.getItem('i18nextLng') || i18n.language || 'it'
+  })
 
-  function changeTheme(t) {
-    setTheme(t)
-    localStorage.setItem('scopa-theme', t)
-    document.documentElement.setAttribute('data-theme', t)
+  function changeTheme(th) {
+    setTheme(th)
+    localStorage.setItem('scopa-theme', th)
+    document.documentElement.setAttribute('data-theme', th)
+  }
+
+  async function changeLingua(lang) {
+    setLingua(lang)
+    i18n.changeLanguage(lang)
+    localStorage.setItem('i18nextLng', lang)
+    if (user?.uid) {
+      await updateDoc(doc(db, 'users', user.uid), { language: lang })
+    }
   }
 
   useEffect(() => {
@@ -111,12 +125,12 @@ export default function Profilo({ user }) {
   }
 
   async function deleteAccount() {
-    if (!window.confirm('Sei sicuro? Tutti i tuoi dati verranno eliminati definitivamente.')) return
+    if (!window.confirm(t('profilo.confermaElimina'))) return
     try {
       await deleteDoc(doc(db, 'users', user.uid))
       await deleteUser(auth.currentUser)
     } catch (e) {
-      alert('Errore. Riprova o esegui di nuovo il login prima di eliminare l\'account.')
+      alert(t('profilo.erroreElimina'))
     }
   }
 
@@ -127,7 +141,7 @@ export default function Profilo({ user }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
         <button onClick={() => navigate('/')} style={backBtn}>←</button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--cream)' }}>Profilo</h1>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--cream)' }}>{t('profilo.titolo')}</h1>
       </div>
 
       {/* Avatar */}
@@ -145,13 +159,13 @@ export default function Profilo({ user }) {
       </div>
 
       {/* Nome */}
-      <div style={sectionTitle}>Nome visualizzato</div>
+      <div style={sectionTitle}>{t('profilo.nomeVisualizzato')}</div>
       <div className="card" style={{ marginBottom: '24px', padding: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
         <input
           value={nome}
           onChange={e => setNome(e.target.value)}
           style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--cream)', fontSize: '15px' }}
-          placeholder="Il tuo nome"
+          placeholder={t('profilo.ilTuoNome')}
         />
         <button onClick={saveName} disabled={saving} style={{
           background: saved ? 'var(--success)' : 'linear-gradient(135deg, var(--gold), var(--gold-light))',
@@ -159,21 +173,21 @@ export default function Profilo({ user }) {
           padding: '8px 16px', color: 'var(--ink)',
           fontSize: '13px', fontWeight: '500', flexShrink: 0, transition: 'background 0.2s'
         }}>
-          {saved ? '✓' : saving ? '...' : 'Salva'}
+          {saved ? '✓' : saving ? '...' : t('profilo.salva')}
         </button>
       </div>
 
       {/* Statistiche */}
-      <div style={sectionTitle}>Statistiche</div>
+      <div style={sectionTitle}>{t('profilo.statistiche')}</div>
       {!stats ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-faint)' }}>Caricamento...</div>
+        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-faint)' }}>{t('profilo.caricamento')}</div>
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '16px' }}>
             {[
-              { label: 'Partite', value: stats.totale },
-              { label: 'Vittorie', value: stats.vinte },
-              { label: 'Sconfitte', value: stats.perse },
+              { label: t('profilo.partite'), value: stats.totale },
+              { label: t('profilo.vittorie'), value: stats.vinte },
+              { label: t('profilo.sconfitte'), value: stats.perse },
             ].map(s => (
               <div key={s.label} style={{
                 background: 'var(--ink-soft)', border: '1px solid var(--ink-muted)',
@@ -187,7 +201,7 @@ export default function Profilo({ user }) {
 
           <div className="card" style={{ padding: '16px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Percentuale vittoria</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('profilo.percentualeVittoria')}</span>
               <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--gold)' }}>{pct}%</span>
             </div>
             <div style={{ height: '6px', background: 'var(--ink-muted)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -197,7 +211,7 @@ export default function Profilo({ user }) {
 
           {stats.topAvversari.length > 0 && (
             <>
-              <div style={sectionTitle}>Giocatori più frequenti</div>
+              <div style={sectionTitle}>{t('profilo.giocatoriFrequenti')}</div>
               <div className="card" style={{ marginBottom: '24px' }}>
                 {stats.topAvversari.map((a, i) => {
                   const pctW = a.partite > 0 ? Math.round((a.vinteContro / a.partite) * 100) : 0
@@ -224,11 +238,10 @@ export default function Profilo({ user }) {
       {/* Storico partite */}
       {storico.length > 0 && (
         <>
-          <div style={sectionTitle}>Ultime partite</div>
+          <div style={sectionTitle}>{t('profilo.ultimePArtite')}</div>
           <div className="card" style={{ marginBottom: '24px' }}>
             {storico.slice(0, 10).map((p, i) => {
               const isSquadre = p.modalita === 'squadre'
-
               let hoVinto = false
               let titolo = ''
               let scores = []
@@ -244,23 +257,20 @@ export default function Profilo({ user }) {
                 const mySquadra = squadre.findIndex(s => s.players.some(pl => pl.uid === user.uid))
                 hoVinto = winnerSi !== -1 && mySquadra === winnerSi
                 titolo = squadre.map(s => s.nome).join(' vs ')
-} else {
-  const allTotals = calcTotals(p.players, p.mani || [])
-  const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
-  const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
-  const maxScore = Math.max(...allTotals.map(t => t.total))
-  const winnerIdx = p.conclusa && allTotals.filter(t => t.total === maxScore).length === 1
-    ? allTotals.findIndex(t => t.total === maxScore) : -1
-  hoVinto = winnerIdx === myIdxFallback
-
-  // Riordina players mettendo l'utente per primo, mantieni indice originale
-  const playersOrdinati = p.players
-    .map((pl, originalIdx) => ({ ...pl, originalIdx }))
-    .sort((a, b) => (b.uid === user.uid) - (a.uid === user.uid))
-
-  titolo = playersOrdinati.map(pl => pl.name).join(' vs ')
-  scores = playersOrdinati.map(pl => allTotals[pl.originalIdx]?.total || 0)
-}
+              } else {
+                const allTotals = calcTotals(p.players, p.mani || [])
+                const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
+                const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
+                const maxScore = Math.max(...allTotals.map(t => t.total))
+                const winnerIdx = p.conclusa && allTotals.filter(t => t.total === maxScore).length === 1
+                  ? allTotals.findIndex(t => t.total === maxScore) : -1
+                hoVinto = winnerIdx === myIdxFallback
+                const playersOrdinati = p.players
+                  .map((pl, originalIdx) => ({ ...pl, originalIdx }))
+                  .sort((a, b) => (b.uid === user.uid) - (a.uid === user.uid))
+                titolo = playersOrdinati.map(pl => pl.name).join(' vs ')
+                scores = playersOrdinati.map(pl => allTotals[pl.originalIdx]?.total || 0)
+              }
 
               const data = p.createdAt?.toDate
                 ? p.createdAt.toDate().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })
@@ -278,11 +288,9 @@ export default function Profilo({ user }) {
                       {!p.conclusa ? '🎮' : hoVinto ? '🏆' : '😔'}
                     </span>
                     <div>
-                      <div style={{ fontSize: '13px', color: 'var(--cream)', fontWeight: '500' }}>
-                        {titolo}
-                      </div>
+                      <div style={{ fontSize: '13px', color: 'var(--cream)', fontWeight: '500' }}>{titolo}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-faint)', marginTop: '2px' }}>
-                        {data} · {!p.conclusa ? 'In corso' : hoVinto ? 'Vittoria' : 'Sconfitta'}
+                        {data} · {!p.conclusa ? t('profilo.inCorso') : hoVinto ? t('profilo.vittoria') : t('profilo.sconfitta')}
                       </div>
                     </div>
                   </div>
@@ -297,26 +305,51 @@ export default function Profilo({ user }) {
       )}
 
       {/* Tema */}
-      <div style={sectionTitle}>Tema</div>
+      <div style={sectionTitle}>{t('profilo.tema')}</div>
       <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
         {[
-          { id: 'dark', label: '🌑 Dark', color: '#1a1a2e' },
-          { id: 'green', label: '🎰 Tavolo', color: '#1a3a2a' },
-        ].map(t => (
+          { id: 'dark', label: t('profilo.dark'), color: '#1a1a2e' },
+          { id: 'green', label: t('profilo.tavolo'), color: '#1a3a2a' },
+        ].map(th => (
           <button
-            key={t.id}
-            onClick={() => changeTheme(t.id)}
+            key={th.id}
+            onClick={() => changeTheme(th.id)}
             style={{
               flex: 1, padding: '14px 10px',
-              background: t.color,
-              border: `2px solid ${theme === t.id ? 'var(--gold)' : 'var(--ink-muted)'}`,
+              background: th.color,
+              border: `2px solid ${theme === th.id ? 'var(--gold)' : 'var(--ink-muted)'}`,
               borderRadius: 'var(--radius-lg)',
-              color: theme === t.id ? 'var(--gold)' : 'var(--text-muted)',
-              fontSize: '13px', fontWeight: theme === t.id ? '500' : '400',
+              color: theme === th.id ? 'var(--gold)' : 'var(--text-muted)',
+              fontSize: '13px', fontWeight: theme === th.id ? '500' : '400',
               cursor: 'pointer', transition: 'all 0.2s'
             }}
           >
-            {t.label}
+            {th.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Lingua */}
+      <div style={sectionTitle}>{t('profilo.lingua')}</div>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+        {[
+          { id: 'it', label: 'Italiano' },
+          { id: 'en', label: 'English' },
+        ].map(l => (
+          <button
+            key={l.id}
+            onClick={() => changeLingua(l.id)}
+            style={{
+              flex: 1, padding: '14px 10px',
+              background: 'var(--ink-soft)',
+              border: `2px solid ${lingua === l.id ? 'var(--gold)' : 'var(--ink-muted)'}`,
+              borderRadius: 'var(--radius-lg)',
+              color: lingua === l.id ? 'var(--gold)' : 'var(--text-muted)',
+              fontSize: '13px', fontWeight: lingua === l.id ? '500' : '400',
+              cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            {l.label}
           </button>
         ))}
       </div>
@@ -324,10 +357,10 @@ export default function Profilo({ user }) {
       {/* Legal */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
         <button className="btn-ghost" onClick={() => navigate('/privacy')} style={{ fontSize: '13px' }}>
-          Privacy Policy
+          {t('profilo.privacy')}
         </button>
         <button className="btn-ghost" onClick={() => navigate('/termini')} style={{ fontSize: '13px' }}>
-          Termini di Servizio
+          {t('profilo.termini')}
         </button>
       </div>
 
@@ -337,17 +370,17 @@ export default function Profilo({ user }) {
         onClick={() => window.open('mailto:gtarraran992@gmail.com?subject=ScopaScore%20Feedback&body=Versione%3A%20' + version)}
         style={{ marginBottom: '12px' }}
       >
-        📩 Segnala un problema
+        {t('profilo.segnala')}
       </button>
 
       {/* Logout */}
       <button className="btn-ghost" onClick={() => signOut(auth)} style={{ marginBottom: '12px' }}>
-        Esci dall'account
+        {t('profilo.esci')}
       </button>
 
       {/* Elimina account */}
       <button className="btn-ghost" onClick={deleteAccount} style={{ marginBottom: '20px', color: 'var(--danger)', borderColor: 'var(--danger)' }}>
-        Elimina account
+        {t('profilo.eliminaAccount')}
       </button>
 
       {/* Versione */}

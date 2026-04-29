@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export default function OfflineBanner() {
+  const { t } = useTranslation()
   const [offline, setOffline] = useState(!navigator.onLine)
 
   useEffect(() => {
@@ -18,16 +20,16 @@ export default function OfflineBanner() {
 
   return (
     <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0,
+      position: 'fixed', bottom: 0, left: 0, right: 0,
       zIndex: 999,
       background: '#3a2a1a',
-      borderBottom: '1px solid var(--gold)',
+      borderTop: '1px solid var(--gold)',
       padding: '10px 16px',
       display: 'flex', alignItems: 'center', gap: '8px',
       fontSize: '13px', color: '#e8b84b',
       textAlign: 'center', justifyContent: 'center'
     }}>
-      📡 Modalità offline — le modifiche verranno sincronizzate al ritorno della connessione
+      {t('comune.offline')}
     </div>
   )
 }
