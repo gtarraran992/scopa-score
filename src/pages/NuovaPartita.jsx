@@ -4,8 +4,10 @@ import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs
 import { db } from '../firebase'
 import { DEFAULT_TARGET } from '../config'
 import { savePartitaLocale, generateId } from '../localDB'
+import { useTranslation } from 'react-i18next'
 
 export default function NuovaPartita({ user, isGuest }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [modalita, setModalita] = useState(null)
   const [players, setPlayers] = useState([
@@ -34,7 +36,6 @@ export default function NuovaPartita({ user, isGuest }) {
     })
   }, [user, isGuest])
 
-  // --- Classica ---
   function updateName(i, val) {
     setPlayers(ps => ps.map((p, pi) => pi === i ? { ...p, name: val, uid: null } : p))
   }
@@ -52,7 +53,6 @@ export default function NuovaPartita({ user, isGuest }) {
     if (players.length > 2) setPlayers(ps => ps.filter((_, pi) => pi !== i))
   }
 
-  // --- Squadre ---
   function updateSquadraPlayer(si, pi, val) {
     setSquadre(sq => sq.map((s, sIdx) => sIdx === si ? {
       ...s, players: s.players.map((p, pIdx) => pIdx === pi ? { ...p, name: val, uid: null } : p)
@@ -78,11 +78,10 @@ export default function NuovaPartita({ user, isGuest }) {
     } : s))
   }
 
-  // --- Start game ---
   async function startGame() {
     if (modalita === 'classica') {
       if (players.some(p => !p.name.trim())) {
-        setError('Inserisci il nome di tutti i giocatori.')
+        setError(t('nuovaPartita.erroreNomi'))
         return
       }
       setLoading(true)
@@ -108,14 +107,13 @@ export default function NuovaPartita({ user, isGuest }) {
           navigate(`/partita/${ref.id}`)
         }
       } catch (e) {
-        setError('Errore durante la creazione. Riprova.')
+        setError(t('nuovaPartita.erroreCreazione'))
         setLoading(false)
       }
     } else {
-      // Squadre
       const tuttiPlayers = squadre.flatMap(s => s.players)
       if (tuttiPlayers.some(p => !p.name.trim())) {
-        setError('Inserisci il nome di tutti i giocatori.')
+        setError(t('nuovaPartita.erroreNomi'))
         return
       }
       setLoading(true)
@@ -149,7 +147,7 @@ export default function NuovaPartita({ user, isGuest }) {
           navigate(`/partita/${ref.id}`)
         }
       } catch (e) {
-        setError('Errore durante la creazione. Riprova.')
+        setError(t('nuovaPartita.erroreCreazione'))
         setLoading(false)
       }
     }
@@ -166,25 +164,25 @@ export default function NuovaPartita({ user, isGuest }) {
       {!modalita && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ background: 'var(--ink-soft)', border: '1px solid var(--gold)', borderRadius: '16px', padding: '28px 24px', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--cream)', marginBottom: '8px' }}>Nuova partita</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>Scegli la modalità di gioco</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--cream)', marginBottom: '8px' }}>{t('nuovaPartita.titolo')}</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>{t('nuovaPartita.scegliModalita')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button onClick={() => setModalita('classica')} style={{
                 padding: '16px', background: 'var(--ink-muted)', border: '1px solid var(--ink-muted)',
                 borderRadius: 'var(--radius-lg)', cursor: 'pointer', textAlign: 'left'
               }}>
-                <div style={{ fontSize: '15px', color: 'var(--cream)', fontWeight: '500', marginBottom: '4px' }}>🃏 Classica</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>Tutti contro tutti</div>
+                <div style={{ fontSize: '15px', color: 'var(--cream)', fontWeight: '500', marginBottom: '4px' }}>🃏 {t('nuovaPartita.classica')}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{t('nuovaPartita.classicoDesc')}</div>
               </button>
               <button onClick={() => setModalita('squadre')} style={{
                 padding: '16px', background: 'var(--ink-muted)', border: '1px solid var(--ink-muted)',
                 borderRadius: 'var(--radius-lg)', cursor: 'pointer', textAlign: 'left'
               }}>
-                <div style={{ fontSize: '15px', color: 'var(--cream)', fontWeight: '500', marginBottom: '4px' }}>👥 Squadre</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>Scopone — 2 vs 2 o 3 vs 3</div>
+                <div style={{ fontSize: '15px', color: 'var(--cream)', fontWeight: '500', marginBottom: '4px' }}>👥 {t('nuovaPartita.squadre')}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{t('nuovaPartita.squadreDesc')}</div>
               </button>
             </div>
-            <button onClick={() => navigate('/')} style={{ ...btnCancel, marginTop: '16px', width: '100%' }}>Annulla</button>
+            <button onClick={() => navigate('/')} style={{ ...btnCancel, marginTop: '16px', width: '100%' }}>{t('nuovaPartita.annulla')}</button>
           </div>
         </div>
       )}
@@ -194,7 +192,7 @@ export default function NuovaPartita({ user, isGuest }) {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ background: 'var(--ink-soft)', border: '1px solid var(--gold)', borderRadius: '16px', padding: '24px', maxWidth: '320px', width: '100%' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--cream)', marginBottom: '16px' }}>
-              Seleziona un amico
+              {t('nuovaPartita.selezionaAmico')}
             </div>
             {amici.filter(a => !amiciSelezionati.includes(a.uid)).map(a => (
               <div key={a.uid} onClick={() => {
@@ -224,7 +222,7 @@ export default function NuovaPartita({ user, isGuest }) {
               </div>
             ))}
             <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-              <button onClick={() => setShowAmiciPicker(null)} style={btnCancel}>Annulla</button>
+              <button onClick={() => setShowAmiciPicker(null)} style={btnCancel}>{t('nuovaPartita.annulla')}</button>
             </div>
           </div>
         </div>
@@ -232,13 +230,13 @@ export default function NuovaPartita({ user, isGuest }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
         <button onClick={() => navigate('/')} style={backBtn}>←</button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--cream)' }}>Nuova partita</h1>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--cream)' }}>{t('nuovaPartita.titolo')}</h1>
       </div>
 
       {/* MODALITÀ CLASSICA */}
       {modalita === 'classica' && (
         <>
-          <div style={sectionTitle}>Giocatori</div>
+          <div style={sectionTitle}>{t('nuovaPartita.giocatori')}</div>
           <div className="card" style={{ marginBottom: '20px' }}>
             {players.map((p, i) => (
               <div key={i} style={{
@@ -258,13 +256,13 @@ export default function NuovaPartita({ user, isGuest }) {
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
                       <div style={{ fontSize: '15px', color: 'var(--cream)' }}>{p.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--gold)' }}>👥 Amico</div>
+                      <div style={{ fontSize: '11px', color: 'var(--gold)' }}>{t('nuovaPartita.amico')}</div>
                     </div>
                     <button onClick={() => setShowAmiciPicker({ i })} style={{
                       background: 'none', border: '1px solid var(--ink-muted)',
                       borderRadius: 'var(--radius-md)', padding: '4px 10px',
                       color: 'var(--text-faint)', fontSize: '12px'
-                    }}>Cambia</button>
+                    }}>{t('nuovaPartita.cambia')}</button>
                   </div>
                 ) : i === 0 && !isGuest ? (
                   <span style={{ flex: 1, fontSize: '15px', color: 'var(--cream)' }}>{p.name}</span>
@@ -273,7 +271,7 @@ export default function NuovaPartita({ user, isGuest }) {
                     <input
                       value={p.name}
                       onChange={e => updateName(i, e.target.value)}
-                      placeholder={`Giocatore ${i + 1}`}
+                      placeholder={`${t('nuovaPartita.giocatori')} ${i + 1}`}
                       style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--cream)', fontSize: '15px' }}
                     />
                     {!isGuest && amici.length > 0 && (
@@ -293,7 +291,7 @@ export default function NuovaPartita({ user, isGuest }) {
           </div>
           {players.length < 6 && (
             <button className="btn-ghost" onClick={addPlayer} style={{ marginBottom: '24px' }}>
-              + Aggiungi giocatore
+              {t('nuovaPartita.aggiungiGiocatore')}
             </button>
           )}
         </>
@@ -304,7 +302,7 @@ export default function NuovaPartita({ user, isGuest }) {
         <>
           {squadre.map((squadra, si) => (
             <div key={si} style={{ marginBottom: '20px' }}>
-              <div style={sectionTitle}>Squadra {si + 1}</div>
+              <div style={sectionTitle}>{t('nuovaPartita.squadra', { n: si + 1 })}</div>
               <div className="card">
                 {squadra.players.map((p, pi) => (
                   <div key={pi} style={{
@@ -324,13 +322,13 @@ export default function NuovaPartita({ user, isGuest }) {
                       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div>
                           <div style={{ fontSize: '15px', color: 'var(--cream)' }}>{p.name}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--gold)' }}>👥 Amico</div>
+                          <div style={{ fontSize: '11px', color: 'var(--gold)' }}>{t('nuovaPartita.amico')}</div>
                         </div>
                         <button onClick={() => setShowAmiciPicker({ si, pi })} style={{
                           background: 'none', border: '1px solid var(--ink-muted)',
                           borderRadius: 'var(--radius-md)', padding: '4px 10px',
                           color: 'var(--text-faint)', fontSize: '12px'
-                        }}>Cambia</button>
+                        }}>{t('nuovaPartita.cambia')}</button>
                       </div>
                     ) : si === 0 && pi === 0 && !isGuest ? (
                       <span style={{ flex: 1, fontSize: '15px', color: 'var(--cream)' }}>{p.name}</span>
@@ -339,7 +337,7 @@ export default function NuovaPartita({ user, isGuest }) {
                         <input
                           value={p.name}
                           onChange={e => updateSquadraPlayer(si, pi, e.target.value)}
-                          placeholder={`Giocatore ${pi + 1}`}
+                          placeholder={`${t('nuovaPartita.giocatori')} ${pi + 1}`}
                           style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--cream)', fontSize: '15px' }}
                         />
                         {!isGuest && amici.length > 0 && (
@@ -359,7 +357,7 @@ export default function NuovaPartita({ user, isGuest }) {
               </div>
               {squadra.players.length < 3 && (
                 <button className="btn-ghost" onClick={() => addPlayerToSquadra(si)} style={{ marginTop: '10px' }}>
-                  + Aggiungi giocatore
+                  {t('nuovaPartita.aggiungiGiocatore')}
                 </button>
               )}
             </div>
@@ -370,10 +368,10 @@ export default function NuovaPartita({ user, isGuest }) {
       {/* Punti per vincere */}
       {modalita && (
         <>
-          <div style={sectionTitle}>Punti per vincere</div>
+          <div style={sectionTitle}>{t('nuovaPartita.puntiPerVincere')}</div>
           <div className="card" style={{ marginBottom: '20px', padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>Target</span>
+              <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>{t('nuovaPartita.target')}</span>
               <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                 <button onClick={() => setTarget(t => Math.max(5, t - 1))} style={stepBtn}>−</button>
                 <span style={{ width: '48px', textAlign: 'center', fontSize: '16px', fontWeight: '500', color: 'var(--cream)' }}>{target}</span>
@@ -382,11 +380,11 @@ export default function NuovaPartita({ user, isGuest }) {
             </div>
           </div>
 
-          <div style={sectionTitle}>Variante</div>
+          <div style={sectionTitle}>{t('nuovaPartita.variante')}</div>
           <div className="card" style={{ marginBottom: '28px' }}>
             {[
-              { key: 'rebello', label: 'Re bello', desc: 'Il re di denari vale 1 punto' },
-              { key: 'napoli', label: 'Napoli', desc: 'Sequenza di denari vale punti extra' },
+              { key: 'rebello', label: t('nuovaPartita.rebello'), desc: t('nuovaPartita.rebelloDesc') },
+              { key: 'napoli', label: t('nuovaPartita.napoli'), desc: t('nuovaPartita.napoliDesc') },
             ].map((opt, i) => (
               <div key={opt.key} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -420,7 +418,7 @@ export default function NuovaPartita({ user, isGuest }) {
           )}
 
           <button className="btn-gold" onClick={startGame} disabled={loading}>
-            {loading ? '...' : 'Inizia partita'}
+            {loading ? '...' : t('nuovaPartita.inizia')}
           </button>
         </>
       )}

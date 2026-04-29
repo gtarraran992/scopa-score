@@ -6,8 +6,10 @@ import { db, auth } from '../firebase'
 import { calcTotals } from '../config'
 import { getPartiteLocali, deletePartitaLocale } from '../localDB'
 import DenariLogo from '../components/DenariLogo'
+import { useTranslation } from 'react-i18next'
 
 export default function Home({ user, isGuest }) {
+  const { t } = useTranslation()
   const [partite, setPartite] = useState([])
   const [deletingId, setDeletingId] = useState(null)
   const navigate = useNavigate()
@@ -51,11 +53,11 @@ export default function Home({ user, isGuest }) {
           <div style={{ background: 'var(--ink-soft)', border: '1px solid var(--gold)', borderRadius: '16px', padding: '28px 24px', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
             <div style={{ fontSize: '28px', marginBottom: '12px' }}>🗑️</div>
             <div style={{ color: '#f0ebe0', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>
-              Eliminare questa partita?
+              {t('home.elimina')}
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setDeletingId(null)} style={btnCancel}>Annulla</button>
-              <button onClick={confirmDelete} style={btnConfirm}>Elimina</button>
+              <button onClick={() => setDeletingId(null)} style={btnCancel}>{t('comune.annulla')}</button>
+              <button onClick={confirmDelete} style={btnConfirm}>{t('partita.elimina')}</button>
             </div>
           </div>
         </div>
@@ -69,7 +71,7 @@ export default function Home({ user, isGuest }) {
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--gold)' }}>Scopa</h1>
           </div>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', paddingLeft: '46px' }}>
-            {isGuest ? 'Modalità ospite' : `Ciao, ${user.displayName || user.email}`}
+            {isGuest ? t('home.ospite') : t('home.ciao', { nome: user.displayName || user.email })}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -77,7 +79,7 @@ export default function Home({ user, isGuest }) {
           {!isGuest && <button onClick={() => navigate('/profilo')} style={iconBtn}>👤</button>}
           {!isGuest && <button onClick={() => navigate('/amici')} style={iconBtn}>👥</button>}
           {isGuest
-            ? <button onClick={() => navigate('/login')} style={{ ...iconBtn, color: 'var(--gold)', borderColor: 'var(--gold)', fontSize: '12px', padding: '8px 12px' }}>Accedi</button>
+            ? <button onClick={() => navigate('/login')} style={{ ...iconBtn, color: 'var(--gold)', borderColor: 'var(--gold)', fontSize: '12px', padding: '8px 12px' }}>{t('home.accedi')}</button>
             : <button onClick={() => signOut(auth)} style={iconBtn}>↩</button>
           }
         </div>
@@ -91,7 +93,7 @@ export default function Home({ user, isGuest }) {
           marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px'
         }}>
           <span style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-            Stai giocando come ospite. Registrati per salvare le partite nel cloud e accedere alle classifiche.
+            {t('home.bannerOspite')}
           </span>
           <button onClick={() => navigate('/login')} style={{
             background: 'linear-gradient(135deg, var(--gold), var(--gold-light))',
@@ -99,20 +101,20 @@ export default function Home({ user, isGuest }) {
             padding: '8px 14px', color: 'var(--ink)',
             fontSize: '12px', fontWeight: '500', flexShrink: 0, cursor: 'pointer'
           }}>
-            Registrati
+            {t('home.registrati')}
           </button>
         </div>
       )}
 
       {/* Nuova partita */}
       <button className="btn-gold" onClick={() => navigate('/nuova-partita')} style={{ marginBottom: '28px' }}>
-        + Nuova partita
+        {t('home.nuovaPartita')}
       </button>
 
       {/* Partite attive */}
       {attive.length > 0 && (
         <>
-          <div style={sectionTitle}>In corso</div>
+          <div style={sectionTitle}>{t('home.inCorso')}</div>
           {attive.map(p => (
             <PartitaCard
               key={p.id}
@@ -128,7 +130,7 @@ export default function Home({ user, isGuest }) {
       {/* Partite concluse */}
       {concluse.length > 0 && (
         <>
-          <div style={sectionTitle}>Concluse</div>
+          <div style={sectionTitle}>{t('home.concluse')}</div>
           {concluse.map(p => (
             <PartitaCard
               key={p.id}
@@ -144,8 +146,8 @@ export default function Home({ user, isGuest }) {
       {partite.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-faint)' }}>
           <div style={{ fontSize: '48px', marginBottom: '12px' }}>🃏</div>
-          <p style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--text-muted)' }}>Nessuna partita</p>
-          <p style={{ fontSize: '13px', marginTop: '6px' }}>Inizia una nuova partita!</p>
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--text-muted)' }}>{t('home.nessunaPartita')}</p>
+          <p style={{ fontSize: '13px', marginTop: '6px' }}>{t('home.inizia')}</p>
         </div>
       )}
     </div>
@@ -153,9 +155,9 @@ export default function Home({ user, isGuest }) {
 }
 
 function PartitaCard({ partita, user, onClick, onDelete }) {
+  const { t } = useTranslation()
   const isSquadre = partita.modalita === 'squadre'
 
-  // Modalità squadre
   const squadre = partita.squadre || []
   const totalsSquadre = squadre.map((_, si) => ({
     total: (partita.mani || []).reduce((s, m) => s + (m[si]?.total || 0), 0)
@@ -165,7 +167,6 @@ function PartitaCard({ partita, user, onClick, onDelete }) {
   const winnerSquadraIdx = isSquadre && partita.conclusa && scoresSquadre.filter(s => s === maxScoreSquadre).length === 1
     ? scoresSquadre.indexOf(maxScoreSquadre) : -1
 
-  // Modalità classica — mantieni indice originale per i punteggi
   const allTotals = isSquadre ? [] : calcTotals(partita.players, partita.mani || [])
   const players = isSquadre ? [] : partita.players
     .map((p, originalIdx) => ({ ...p, originalIdx }))
@@ -185,7 +186,7 @@ function PartitaCard({ partita, user, onClick, onDelete }) {
     <div className="card" onClick={onClick} style={{ marginBottom: '12px', padding: '16px', cursor: 'pointer' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <span style={{ fontSize: '12px', color: 'var(--text-faint)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-          {isSquadre ? '👥 ' : ''}{partita.conclusa ? 'Conclusa' : `Mano ${(partita.mani || []).length + 1}`}
+          {isSquadre ? '👥 ' : ''}{partita.conclusa ? t('home.conclusa') : t('home.mano', { n: (partita.mani || []).length + 1 })}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{data}</span>

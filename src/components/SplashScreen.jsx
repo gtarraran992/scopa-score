@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
 import DenariLogo from './DenariLogo'
 import { playSound } from '../utils/audio'
+import { useTranslation } from 'react-i18next'
 
 export default function SplashScreen({ onFinish }) {
+  const { t } = useTranslation()
   const [fadeOut, setFadeOut] = useState(false)
-  
-const savedTheme = localStorage.getItem('scopa-theme')
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
 
-let bgColor = '#1a1a2e' // dark default
-const textColor = '#f5f0e8'
-const subtitleColor = bgColor === '#1a1a2e' ? '#5a5440' : '#6b8a78'
-if (savedTheme === 'green') bgColor = '#1a3a2a'
-else if (!savedTheme && !prefersDark) bgColor = '#1a3a2a' // sistema chiaro → green
+  const savedTheme = localStorage.getItem('scopa-theme')
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+
+  let bgColor = '#1a1a2e'
+  const textColor = '#f5f0e8'
+  if (savedTheme === 'green') bgColor = '#1a3a2a'
+  else if (!savedTheme && !prefersDark) bgColor = '#1a3a2a'
+  const subtitleColor = bgColor === '#1a1a2e' ? '#5a5440' : '#6b8a78'
 
   useEffect(() => {
     playSound('apertura')
@@ -32,7 +34,6 @@ else if (!savedTheme && !prefersDark) bgColor = '#1a3a2a' // sistema chiaro → 
       transition: 'opacity 0.5s ease',
     }}>
 
-      {/* Denari SVG */}
       <div style={{
         width: '140px', height: '140px',
         filter: 'drop-shadow(0 0 30px rgba(201,150,58,0.45))',
@@ -41,7 +42,6 @@ else if (!savedTheme && !prefersDark) bgColor = '#1a3a2a' // sistema chiaro → 
         <DenariLogo size={140} glow={true} />
       </div>
 
-      {/* Titolo */}
       <div style={{
         fontFamily: 'var(--font-display)',
         fontSize: '30px', fontWeight: '600',
@@ -53,7 +53,6 @@ else if (!savedTheme && !prefersDark) bgColor = '#1a3a2a' // sistema chiaro → 
         Scopa<span style={{ color: 'var(--gold)' }}>Score</span>
       </div>
 
-      {/* Sottotitolo */}
       <div style={{
         fontSize: '12px',
         letterSpacing: '0.25em',
@@ -61,10 +60,9 @@ else if (!savedTheme && !prefersDark) bgColor = '#1a3a2a' // sistema chiaro → 
         textTransform: 'uppercase',
         animation: 'scopaSlideUp 0.6s 0.4s ease both',
       }}>
-        Il segnapunti italiano
+        {t('login.sottotitolo')}
       </div>
 
-      {/* Dots */}
       <div style={{ display: 'flex', gap: '8px', animation: 'scopaSlideUp 0.6s 0.55s ease both' }}>
         {[0, 0.2, 0.4].map((delay, i) => (
           <div key={i} style={{

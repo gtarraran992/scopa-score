@@ -3,19 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { calcTotals } from '../config'
+import { useTranslation } from 'react-i18next'
 
 export default function Classifica({ user }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [classifica, setClassifica] = useState(null)
 
   useEffect(() => {
     async function loadClassifica() {
-      // Prendi la lista amici
       const userSnap = await getDoc(doc(db, 'users', user.uid))
       const friends = userSnap.data()?.friends || []
       const allUids = [user.uid, ...friends]
 
-      // Prendi tutte le partite concluse che coinvolgono l'utente
       const q = query(
         collection(db, 'partite'),
         where('uids', 'array-contains', user.uid),
@@ -24,7 +24,6 @@ export default function Classifica({ user }) {
       const snap = await getDocs(q)
       const partite = snap.docs.map(d => d.data())
 
-      // Prendi i profili di tutti gli uid coinvolti
       const profileMap = {}
       for (const uid of allUids) {
         const s = uid === user.uid
@@ -40,7 +39,6 @@ export default function Classifica({ user }) {
         }
       }
 
-      // Calcola statistiche per ogni partita
       partite.forEach(p => {
         const totals = calcTotals(p.players, p.mani || [])
         const scores = totals.map(t => t.total)
@@ -48,7 +46,6 @@ export default function Classifica({ user }) {
         const winnerIdx = scores.filter(s => s === maxScore).length === 1
           ? scores.indexOf(maxScore) : -1
 
-        // Itera su tutti i giocatori della partita
         p.players.forEach((player, pi) => {
           const uid = player.uid
           if (!uid || !profileMap[uid]) return
@@ -76,22 +73,21 @@ export default function Classifica({ user }) {
     <div className="page">
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
         <button onClick={() => navigate('/')} style={backBtn}>←</button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--cream)' }}>Classifica</h1>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--cream)' }}>{t('classifica.titolo')}</h1>
       </div>
 
       {!classifica ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-faint)' }}>
-          Caricamento...
+          {t('classifica.caricamento')}
         </div>
       ) : classifica.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
           <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏆</div>
-          <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>Nessuna partita ancora</p>
-          <p style={{ fontSize: '13px', color: 'var(--text-faint)', marginTop: '6px' }}>Aggiungi amici e gioca per vedere la classifica</p>
+          <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>{t('classifica.nessunaPartita')}</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-faint)', marginTop: '6px' }}>{t('classifica.aggiungiAmici')}</p>
         </div>
       ) : (
         <div className="card">
-          {/* Header tabella */}
           <div style={{
             display: 'grid', gridTemplateColumns: '32px 1fr 48px 48px 48px',
             gap: '8px', padding: '10px 18px',
@@ -101,7 +97,7 @@ export default function Classifica({ user }) {
             color: 'var(--text-faint)'
           }}>
             <span>#</span>
-            <span>Giocatore</span>
+            <span>{t('classifica.giocatore')}</span>
             <span style={{ textAlign: 'center' }}>V</span>
             <span style={{ textAlign: 'center' }}>S</span>
             <span style={{ textAlign: 'right' }}>%</span>
@@ -123,7 +119,7 @@ export default function Classifica({ user }) {
                 </span>
                 <div>
                   <div style={{ fontSize: '15px', color: isMe ? 'var(--gold)' : 'var(--cream)', fontWeight: isMe ? '500' : '400' }}>
-                    {p.displayName} {isMe && <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>(tu)</span>}
+                    {p.displayName} {isMe && <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>{t('classifica.tu')}</span>}
                   </div>
                   <div style={{ height: '3px', background: 'var(--ink-muted)', borderRadius: '2px', marginTop: '6px', overflow: 'hidden' }}>
                     <div style={{

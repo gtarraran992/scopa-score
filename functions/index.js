@@ -47,25 +47,36 @@ exports.notificaFinePartita = onDocumentUpdated("partite/{partitaId}", async (ev
     const fcmToken = userSnap.data()?.fcmToken;
     if (!fcmToken) continue;
 
+    // Leggi lingua dell'utente
+    const lang = userSnap.data()?.language || 'it';
+    const isEn = lang.startsWith('en');
+
     const isWinner = winnerUids.includes(uid);
 
-    let body = '';
-    if (isSquadre) {
-      body = isWinner
-        ? `La tua squadra ha vinto! Complimenti!`
-        : `${winnerName} ha vinto la partita.`;
+    let title, body;
+    if (isEn) {
+      title = isWinner ? "🏆 You won!" : "😔 You lost"
+      if (isSquadre) {
+        body = isWinner ? "Your team won! Congratulations!" : `${winnerName} won the game.`
+      } else {
+        body = isWinner
+          ? `Congratulations! You beat ${dopo.players.filter(p => p.uid !== uid).map(p => p.name).join(", ")}!`
+          : `${winnerName} won the game.`
+      }
     } else {
-      body = isWinner
-        ? `Complimenti! Hai battuto ${dopo.players.filter(p => p.uid !== uid).map(p => p.name).join(", ")}!`
-        : `${winnerName} ha vinto la partita.`;
+      title = isWinner ? "🏆 Hai vinto!" : "😔 Hai perso"
+      if (isSquadre) {
+        body = isWinner ? "La tua squadra ha vinto! Complimenti!" : `${winnerName} ha vinto la partita.`
+      } else {
+        body = isWinner
+          ? `Complimenti! Hai battuto ${dopo.players.filter(p => p.uid !== uid).map(p => p.name).join(", ")}!`
+          : `${winnerName} ha vinto la partita.`
+      }
     }
 
     await messaging.send({
       token: fcmToken,
-      notification: {
-        title: isWinner ? "🏆 Hai vinto!" : "😔 Hai perso",
-        body,
-      },
+      notification: { title, body },
       android: {
         notification: {
           channelId: isWinner ? "vittoria" : "sconfitta",

@@ -1,33 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DenariLogo from '../components/DenariLogo'
-
-const SLIDES = [
-  {
-    icon: null,
-    title: 'Benvenuto in ScopaScore',
-    desc: 'Il segnapunti digitale per il gioco di carte Scopa. Tieni traccia dei punti senza più perderti.',
-  },
-  {
-    icon: '🃏',
-    title: 'Crea una partita',
-    desc: 'Scegli i giocatori, il target di punti e le varianti che usate. Da 2 a 6 giocatori, anche a squadre.',
-  },
-  {
-    icon: '✅',
-    title: 'Registra ogni mano',
-    desc: 'Seleziona chi ha preso carte, denari, sette bello, re bello, primiera e conta scope e napoli.',
-  },
-  {
-    icon: '🏆',
-    title: 'Statistiche e classifiche',
-    desc: 'Tieni traccia delle tue vittorie e sfida i tuoi amici con le classifiche.',
-  },
-]
+import { useTranslation } from 'react-i18next'
 
 export default function Onboarding() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [slide, setSlide] = useState(0)
+
+  const SLIDES = [
+    { icon: null, title: t('onboarding.slide0titolo'), desc: t('onboarding.slide0desc') },
+    { icon: '🃏', title: t('onboarding.slide1titolo'), desc: t('onboarding.slide1desc') },
+    { icon: '✅', title: t('onboarding.slide2titolo'), desc: t('onboarding.slide2desc') },
+    { icon: '🏆', title: t('onboarding.slide3titolo'), desc: t('onboarding.slide3desc') },
+  ]
 
   function finish() {
     localStorage.setItem('onboarding-done', 'true')
@@ -55,7 +41,7 @@ export default function Onboarding() {
             background: 'none', border: 'none',
             color: 'var(--text-faint)', fontSize: '14px'
           }}>
-            Salta
+            {t('onboarding.salta')}
           </button>
         )}
       </div>
@@ -89,7 +75,6 @@ export default function Onboarding() {
 
       {/* Bottom */}
       <div style={{ width: '100%' }}>
-        {/* Dots */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '32px' }}>
           {SLIDES.map((_, i) => (
             <div key={i} style={{
@@ -102,7 +87,7 @@ export default function Onboarding() {
         </div>
 
         <button className="btn-gold" onClick={next}>
-          {slide < SLIDES.length - 1 ? 'Avanti' : 'Inizia →'}
+          {slide < SLIDES.length - 1 ? t('onboarding.avanti') : t('onboarding.inizia')}
         </button>
       </div>
     </div>
