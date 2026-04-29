@@ -244,20 +244,23 @@ export default function Profilo({ user }) {
                 const mySquadra = squadre.findIndex(s => s.players.some(pl => pl.uid === user.uid))
                 hoVinto = winnerSi !== -1 && mySquadra === winnerSi
                 titolo = squadre.map(s => s.nome).join(' vs ')
-              } else {
-                const totals = calcTotals(p.players, p.mani || [])
-                scores = totals.map(t => t.total)
-                const maxScore = Math.max(...scores)
-                const winnerIdx = p.conclusa && scores.filter(s => s === maxScore).length === 1
-                  ? scores.indexOf(maxScore) : -1
-                const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
-                const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
-                hoVinto = winnerIdx === myIdxFallback
-                titolo = [...p.players]
-                  .sort((a, b) => (b.uid === user.uid) - (a.uid === user.uid))
-                  .map(pl => pl.name)
-                  .join(' vs ')
-              }
+} else {
+  const allTotals = calcTotals(p.players, p.mani || [])
+  const myIdx = p.players.findIndex(pl => pl.uid === user.uid)
+  const myIdxFallback = myIdx === -1 && p.createdBy === user.uid ? 0 : myIdx
+  const maxScore = Math.max(...allTotals.map(t => t.total))
+  const winnerIdx = p.conclusa && allTotals.filter(t => t.total === maxScore).length === 1
+    ? allTotals.findIndex(t => t.total === maxScore) : -1
+  hoVinto = winnerIdx === myIdxFallback
+
+  // Riordina players mettendo l'utente per primo, mantieni indice originale
+  const playersOrdinati = p.players
+    .map((pl, originalIdx) => ({ ...pl, originalIdx }))
+    .sort((a, b) => (b.uid === user.uid) - (a.uid === user.uid))
+
+  titolo = playersOrdinati.map(pl => pl.name).join(' vs ')
+  scores = playersOrdinati.map(pl => allTotals[pl.originalIdx]?.total || 0)
+}
 
               const data = p.createdAt?.toDate
                 ? p.createdAt.toDate().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })

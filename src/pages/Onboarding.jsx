@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import DenariLogo from '../components/DenariLogo'
 
 const SLIDES = [
   {
-    icon: '♠',
+    icon: null,
     title: 'Benvenuto in ScopaScore',
     desc: 'Il segnapunti digitale per il gioco di carte Scopa. Tieni traccia dei punti senza più perderti.',
   },
   {
     icon: '🃏',
     title: 'Crea una partita',
-    desc: 'Scegli i giocatori, il target di punti e le varianti che usate. Da 2 a 6 giocatori.',
+    desc: 'Scegli i giocatori, il target di punti e le varianti che usate. Da 2 a 6 giocatori, anche a squadre.',
   },
   {
     icon: '✅',
@@ -28,10 +29,10 @@ export default function Onboarding() {
   const navigate = useNavigate()
   const [slide, setSlide] = useState(0)
 
-function finish() {
-  localStorage.setItem('onboarding-done', 'true')
-  window.location.href = '/'  // invece di navigate('/')
-}
+  function finish() {
+    localStorage.setItem('onboarding-done', 'true')
+    window.location.href = '/'
+  }
 
   function next() {
     if (slide < SLIDES.length - 1) setSlide(s => s + 1)
@@ -61,13 +62,19 @@ function finish() {
 
       {/* Content */}
       <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{
-          width: '100px', height: '100px', borderRadius: '28px',
-          background: 'var(--ink-soft)', border: '1px solid var(--ink-muted)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '48px', marginBottom: '32px'
-        }}>
-          {s.icon}
+        <div style={{ marginBottom: '32px' }}>
+          {s.icon === null ? (
+            <DenariLogo size={100} glow={true} />
+          ) : (
+            <div style={{
+              width: '100px', height: '100px', borderRadius: '28px',
+              background: 'var(--ink-soft)', border: '1px solid var(--ink-muted)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '48px'
+            }}>
+              {s.icon}
+            </div>
+          )}
         </div>
         <h1 style={{
           fontFamily: 'var(--font-display)', fontSize: '26px',
