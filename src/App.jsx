@@ -25,7 +25,9 @@ import Consenso from './pages/Consenso'
 
 export default function App() {
   const [user, setUser] = useState(undefined)
-  const [showSplash, setShowSplash] = useState(true)
+  const [showSplash, setShowSplash] = useState(() => {
+    return !localStorage.getItem('splash-shown')
+  })
 
   // 1. Auth
   useEffect(() => {
@@ -43,41 +45,40 @@ export default function App() {
       playSound('notifica')
     })
 
-async function scheduleNotifica() {
-  const { display } = await LocalNotifications.checkPermissions()
-  if (display !== 'granted') {
-    const { display: granted } = await LocalNotifications.requestPermissions()
-    if (granted !== 'granted') return
-  }
-  await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
-
-  const now = new Date()
-  const next = new Date()
-  next.setHours(12, 0, 0, 0)
-  if (now >= next) next.setDate(next.getDate() + 1)
-
-  // Rileva lingua
-  const lang = localStorage.getItem('i18nextLng') || 'it'
-  const isEn = lang.startsWith('en')
-
-  await LocalNotifications.schedule({
-    notifications: [
-      {
-        id: 1,
-        title: '🃏 ScopaScore',
-        body: isEn ? 'Challenge a friend to Scopa today!' : 'Sfida un amico a Scopa oggi!',
-        schedule: {
-          at: next,
-          repeats: true,
-          every: 'day',
-        },
-        sound: null,
-        smallIcon: 'ic_stat_notify',
-        channelId: 'promemoria',
+    async function scheduleNotifica() {
+      const { display } = await LocalNotifications.checkPermissions()
+      if (display !== 'granted') {
+        const { display: granted } = await LocalNotifications.requestPermissions()
+        if (granted !== 'granted') return
       }
-    ]
-  })
-}
+      await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
+
+      const now = new Date()
+      const next = new Date()
+      next.setHours(12, 0, 0, 0)
+      if (now >= next) next.setDate(next.getDate() + 1)
+
+      const lang = localStorage.getItem('i18nextLng') || 'it'
+      const isEn = lang.startsWith('en')
+
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 1,
+            title: '🃏 ScopaScore',
+            body: isEn ? 'Challenge a friend to Scopa today!' : 'Sfida un amico a Scopa oggi!',
+            schedule: {
+              at: next,
+              repeats: true,
+              every: 'day',
+            },
+            sound: null,
+            smallIcon: 'ic_stat_notify',
+            channelId: 'promemoria',
+          }
+        ]
+      })
+    }
 
     scheduleNotifica()
   }, [])
@@ -129,18 +130,23 @@ async function scheduleNotifica() {
 
   return (
     <div style={{ height: '100%' }}>
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      {showSplash && (
+        <SplashScreen onFinish={() => {
+          localStorage.setItem('splash-shown', 'true')
+          setShowSplash(false)
+        }} />
+      )}
       <OfflineBanner />
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
         <Route path="/consenso" element={<Consenso />} />
-<Route path="/" element={
-  !localStorage.getItem('consenso-accettato')
-    ? <Navigate to="/consenso" />
-    : localStorage.getItem('onboarding-done')
-      ? <Home user={user} isGuest={isGuest} />
-      : <Navigate to="/onboarding" />
-} />
+        <Route path="/" element={
+          !localStorage.getItem('consenso-accettato')
+            ? <Navigate to="/consenso" />
+            : localStorage.getItem('onboarding-done')
+              ? <Home user={user} isGuest={isGuest} />
+              : <Navigate to="/onboarding" />
+        } />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/nuova-partita" element={<NuovaPartita user={user} isGuest={isGuest} />} />
         <Route path="/partita/:id" element={<Partita user={user} isGuest={isGuest} />} />
