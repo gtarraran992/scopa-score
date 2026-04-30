@@ -61,23 +61,49 @@ export default function App() {
       const lang = localStorage.getItem('i18nextLng') || 'it'
       const isEn = lang.startsWith('en')
 
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: 1,
-            title: '🃏 ScopaScore',
-            body: isEn ? 'Challenge a friend to Scopa today!' : 'Sfida un amico a Scopa oggi!',
-            schedule: {
-              at: next,
-              repeats: true,
-              every: 'day',
-            },
-            sound: null,
-            smallIcon: 'ic_stat_notify',
-            channelId: 'promemoria',
-          }
-        ]
-      })
+async function scheduleNotifica() {
+  const { display } = await LocalNotifications.checkPermissions()
+  if (display !== 'granted') {
+    const { display: granted } = await LocalNotifications.requestPermissions()
+    if (granted !== 'granted') return
+  }
+  await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
+
+  const now = new Date()
+  const next = new Date()
+  next.setHours(12, 0, 0, 0)
+  if (now >= next) next.setDate(next.getDate() + 1)
+
+  const lang = localStorage.getItem('i18nextLng') || 'it'
+
+  const bodies = {
+    it: 'Sfida un amico a Scopa oggi!',
+    en: 'Challenge a friend to Scopa today!',
+    es: '¡Reta a un amigo a jugar a la Scopa hoy!',
+    fr: 'Défie un ami à la Scopa aujourd\'hui !',
+    de: 'Fordere heute einen Freund zur Scopa heraus!',
+  }
+
+  const body = bodies[lang] || bodies['it']
+
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        id: 1,
+        title: '🃏 ScopaScore',
+        body,
+        schedule: {
+          at: next,
+          repeats: true,
+          every: 'day',
+        },
+        sound: null,
+        smallIcon: 'ic_stat_notify',
+        channelId: 'promemoria',
+      }
+    ]
+  })
+}
     }
 
     scheduleNotifica()

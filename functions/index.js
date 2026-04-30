@@ -7,6 +7,60 @@ const { getMessaging } = require("firebase-admin/messaging");
 initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
+function getNotificationText(lang, isWinner, isSquadre, winnerName, opponents) {
+  const texts = {
+    it: {
+      titleWin: "🏆 Hai vinto!",
+      titleLose: "😔 Hai perso",
+      bodyWinSquadre: "La tua squadra ha vinto! Complimenti!",
+      bodyLoseSquadre: `${winnerName} ha vinto la partita.`,
+      bodyWinClassica: `Complimenti! Hai battuto ${opponents}!`,
+      bodyLoseClassica: `${winnerName} ha vinto la partita.`,
+    },
+    en: {
+      titleWin: "🏆 You won!",
+      titleLose: "😔 You lost",
+      bodyWinSquadre: "Your team won! Congratulations!",
+      bodyLoseSquadre: `${winnerName} won the game.`,
+      bodyWinClassica: `Congratulations! You beat ${opponents}!`,
+      bodyLoseClassica: `${winnerName} won the game.`,
+    },
+    es: {
+      titleWin: "🏆 ¡Has ganado!",
+      titleLose: "😔 Has perdido",
+      bodyWinSquadre: "¡Tu equipo ha ganado! ¡Enhorabuena!",
+      bodyLoseSquadre: `${winnerName} ha ganado la partida.`,
+      bodyWinClassica: `¡Enhorabuena! ¡Has ganado a ${opponents}!`,
+      bodyLoseClassica: `${winnerName} ha ganado la partida.`,
+    },
+    fr: {
+      titleWin: "🏆 Tu as gagné !",
+      titleLose: "😔 Tu as perdu",
+      bodyWinSquadre: "Ton équipe a gagné ! Félicitations !",
+      bodyLoseSquadre: `${winnerName} a gagné la partie.`,
+      bodyWinClassica: `Félicitations ! Tu as battu ${opponents} !`,
+      bodyLoseClassica: `${winnerName} a gagné la partie.`,
+    },
+    de: {
+      titleWin: "🏆 Du hast gewonnen!",
+      titleLose: "😔 Du hast verloren",
+      bodyWinSquadre: "Dein Team hat gewonnen! Glückwunsch!",
+      bodyLoseSquadre: `${winnerName} hat das Spiel gewonnen.`,
+      bodyWinClassica: `Glückwunsch! Du hast ${opponents} besiegt!`,
+      bodyLoseClassica: `${winnerName} hat das Spiel gewonnen.`,
+    },
+  };
+
+  const t = texts[lang] || texts['it'];
+
+  return {
+    title: isWinner ? t.titleWin : t.titleLose,
+    body: isWinner
+      ? (isSquadre ? t.bodyWinSquadre : t.bodyWinClassica)
+      : (isSquadre ? t.bodyLoseSquadre : t.bodyLoseClassica),
+  };
+}
+
 exports.notificaFinePartita = onDocumentUpdated("partite/{partitaId}", async (event) => {
   const prima = event.data.before.data();
   const dopo = event.data.after.data();
@@ -44,35 +98,18 @@ exports.notificaFinePartita = onDocumentUpdated("partite/{partitaId}", async (ev
   for (const uid of uids) {
     if (uid === dopo.createdBy) continue;
     const userSnap = await db.collection("users").doc(uid).get();
-    const fcmToken = userSnap.data()?.fcmToken;
+    const userData = userSnap.data();
+    const fcmToken = userData?.fcmToken;
     if (!fcmToken) continue;
 
-    // Leggi lingua dell'utente
-    const lang = userSnap.data()?.language || 'it';
-    const isEn = lang.startsWith('en');
-
+    const lang = userData?.language || 'it';
     const isWinner = winnerUids.includes(uid);
+    const opponents = dopo.players
+      .filter(p => p.uid !== uid)
+      .map(p => p.name)
+      .join(", ");
 
-    let title, body;
-    if (isEn) {
-      title = isWinner ? "🏆 You won!" : "😔 You lost"
-      if (isSquadre) {
-        body = isWinner ? "Your team won! Congratulations!" : `${winnerName} won the game.`
-      } else {
-        body = isWinner
-          ? `Congratulations! You beat ${dopo.players.filter(p => p.uid !== uid).map(p => p.name).join(", ")}!`
-          : `${winnerName} won the game.`
-      }
-    } else {
-      title = isWinner ? "🏆 Hai vinto!" : "😔 Hai perso"
-      if (isSquadre) {
-        body = isWinner ? "La tua squadra ha vinto! Complimenti!" : `${winnerName} ha vinto la partita.`
-      } else {
-        body = isWinner
-          ? `Complimenti! Hai battuto ${dopo.players.filter(p => p.uid !== uid).map(p => p.name).join(", ")}!`
-          : `${winnerName} ha vinto la partita.`
-      }
-    }
+    const { title, body } = getNotificationText(lang, isWinner, isSquadre, winnerName, opponents);
 
     await messaging.send({
       token: fcmToken,

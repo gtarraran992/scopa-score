@@ -8,6 +8,14 @@ import { version } from '../../package.json'
 import { useTranslation } from 'react-i18next'
 import { pickAndUploadAvatar } from '../utils/avatar'
 
+const LINGUE = [
+  { id: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { id: 'en', label: 'English', flag: '🇬🇧' },
+  { id: 'es', label: 'Español', flag: '🇪🇸' },
+  { id: 'fr', label: 'Français', flag: '🇫🇷' },
+  { id: 'de', label: 'Deutsch', flag: '🇩🇪' },
+]
+
 export default function Profilo({ user }) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -18,6 +26,7 @@ export default function Profilo({ user }) {
   const [storico, setStorico] = useState([])
   const [photoURL, setPhotoURL] = useState(user.photoURL || null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [showLinguaModal, setShowLinguaModal] = useState(false)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('scopa-theme')
     if (saved) return saved
@@ -37,6 +46,7 @@ export default function Profilo({ user }) {
     setLingua(lang)
     i18n.changeLanguage(lang)
     localStorage.setItem('i18nextLng', lang)
+    setShowLinguaModal(false)
     if (user?.uid) {
       await updateDoc(doc(db, 'users', user.uid), { language: lang })
     }
@@ -163,9 +173,71 @@ export default function Profilo({ user }) {
   }
 
   const pct = stats?.totale > 0 ? Math.round((stats.vinte / stats.totale) * 100) : 0
+  const linguaAttuale = LINGUE.find(l => l.id === lingua) || LINGUE[0]
 
   return (
     <div className="page">
+      {/* Modale lingua */}
+      {showLinguaModal && (
+        <div
+          onClick={() => setShowLinguaModal(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--ink-soft)',
+              borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
+              width: '100%', maxWidth: '480px',
+              padding: '8px 0 32px',
+            }}
+          >
+            {/* Handle */}
+            <div style={{
+              width: '36px', height: '4px',
+              background: 'var(--ink-muted)',
+              borderRadius: '2px',
+              margin: '12px auto 20px',
+            }} />
+
+            <div style={{
+              fontSize: '12px', fontWeight: '500', letterSpacing: '0.07em',
+              textTransform: 'uppercase', color: 'var(--text-muted)',
+              padding: '0 20px', marginBottom: '8px'
+            }}>
+              {t('profilo.lingua')}
+            </div>
+
+            {LINGUE.map(l => (
+              <button
+                key={l.id}
+                onClick={() => changeLingua(l.id)}
+                style={{
+                  width: '100%', padding: '16px 20px',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '1px solid var(--ink-muted)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ fontSize: '16px', color: 'var(--cream)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '22px' }}>{l.flag}</span>
+                  {l.label}
+                </span>
+                {lingua === l.id && (
+                  <span style={{ color: 'var(--gold)', fontSize: '18px' }}>✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
         <button onClick={() => navigate('/')} style={backBtn}>←</button>
@@ -393,28 +465,21 @@ export default function Profilo({ user }) {
 
       {/* Lingua */}
       <div style={sectionTitle}>{t('profilo.lingua')}</div>
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
-        {[
-          { id: 'it', label: 'Italiano' },
-          { id: 'en', label: 'English' },
-        ].map(l => (
-          <button
-            key={l.id}
-            onClick={() => changeLingua(l.id)}
-            style={{
-              flex: 1, padding: '14px 10px',
-              background: 'var(--ink-soft)',
-              border: `2px solid ${lingua === l.id ? 'var(--gold)' : 'var(--ink-muted)'}`,
-              borderRadius: 'var(--radius-lg)',
-              color: lingua === l.id ? 'var(--gold)' : 'var(--text-muted)',
-              fontSize: '13px', fontWeight: lingua === l.id ? '500' : '400',
-              cursor: 'pointer', transition: 'all 0.2s'
-            }}
-          >
-            {l.label}
-          </button>
-        ))}
-      </div>
+      <button
+        onClick={() => setShowLinguaModal(true)}
+        className="card"
+        style={{
+          width: '100%', padding: '16px 18px', marginBottom: '24px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          cursor: 'pointer', border: '1px solid var(--ink-muted)',
+        }}
+      >
+        <span style={{ fontSize: '16px', color: 'var(--cream)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '22px' }}>{linguaAttuale.flag}</span>
+          {linguaAttuale.label}
+        </span>
+        <span style={{ color: 'var(--text-faint)', fontSize: '16px' }}>›</span>
+      </button>
 
       {/* Legal */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>

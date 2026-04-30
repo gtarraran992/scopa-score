@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { signInWithPopup, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth'
-import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { getPartiteLocali, clearPartiteLocali } from '../localDB'
 import { auth, googleProvider, db } from '../firebase'
 import { Capacitor } from '@capacitor/core'
@@ -18,7 +18,15 @@ async function saveUserToDb(user) {
       email: user.email,
       friends: [],
       createdAt: new Date(),
+      photoURL: user.photoURL || null, // ✅ aggiunto
     })
+  } else {
+    // ✅ aggiorna photoURL solo se l'utente non ha una foto custom su Storage
+    const data = snap.data()
+    const isStoragePhoto = data.photoURL?.includes('firebasestorage')
+    if (!isStoragePhoto && user.photoURL && data.photoURL !== user.photoURL) {
+      await updateDoc(ref, { photoURL: user.photoURL })
+    }
   }
 }
 
@@ -83,6 +91,7 @@ export default function Login() {
           email,
           friends: [],
           createdAt: new Date(),
+          photoURL: null,
         })
         await migraPartiteLocali(res.user)
       } else {
