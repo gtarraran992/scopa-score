@@ -104,6 +104,9 @@ napoliMin: 'min. 3',
     erroreElimina: "Errore. Riprova o esegui di nuovo il login prima di eliminare l'account.",
     confermaElimina: 'Sei sicuro? Tutti i tuoi dati verranno eliminati definitivamente.',
     lingua: 'Lingua',
+uploadFoto: '📷 Cambia foto',
+usaFotoGoogle: 'Usa foto Google',
+rimuoviFoto: 'Rimuovi foto',
   },
   // Amici
 amici: {

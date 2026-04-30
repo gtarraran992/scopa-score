@@ -6,6 +6,7 @@ import { signOut, updateProfile, deleteUser } from 'firebase/auth'
 import { calcTotals } from '../config'
 import { version } from '../../package.json'
 import { useTranslation } from 'react-i18next'
+import { pickAndUploadAvatar } from '../utils/avatar'
 
 export default function Profilo({ user }) {
   const { t, i18n } = useTranslation()
@@ -15,6 +16,8 @@ export default function Profilo({ user }) {
   const [saved, setSaved] = useState(false)
   const [stats, setStats] = useState(null)
   const [storico, setStorico] = useState([])
+  const [photoURL, setPhotoURL] = useState(user.photoURL || null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('scopa-theme')
     if (saved) return saved
@@ -124,6 +127,31 @@ export default function Profilo({ user }) {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  async function uploadFoto() {
+    setUploadingPhoto(true)
+    try {
+      const url = await pickAndUploadAvatar(user.uid)
+      setPhotoURL(url)
+      await updateProfile(auth.currentUser, { photoURL: url })
+      await updateDoc(doc(db, 'users', user.uid), { photoURL: url })
+    } catch (e) {
+      console.warn('Upload foto fallito', e)
+    }
+    setUploadingPhoto(false)
+  }
+
+  async function usaFotoGoogle() {
+    setPhotoURL(user.photoURL)
+    await updateProfile(auth.currentUser, { photoURL: user.photoURL })
+    await updateDoc(doc(db, 'users', user.uid), { photoURL: user.photoURL })
+  }
+
+  async function rimuoviFoto() {
+    setPhotoURL(null)
+    await updateProfile(auth.currentUser, { photoURL: null })
+    await updateDoc(doc(db, 'users', user.uid), { photoURL: null })
+  }
+
   async function deleteAccount() {
     if (!window.confirm(t('profilo.confermaElimina'))) return
     try {
@@ -147,15 +175,49 @@ export default function Profilo({ user }) {
       {/* Avatar */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '28px' }}>
         <div style={{
-          width: '72px', height: '72px', borderRadius: '50%',
-          background: 'linear-gradient(135deg, var(--gold), var(--gold-light))',
+          width: '80px', height: '80px', borderRadius: '50%',
+          background: photoURL ? 'transparent' : 'linear-gradient(135deg, var(--gold), var(--gold-light))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--font-display)', fontSize: '28px', color: 'var(--ink)',
-          marginBottom: '12px'
+          fontFamily: 'var(--font-display)', fontSize: '32px', color: 'var(--ink)',
+          marginBottom: '12px', overflow: 'hidden'
         }}>
-          {(nome || user.email)?.[0]?.toUpperCase()}
+          {photoURL
+            ? <img src={photoURL} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : (nome || user.email)?.[0]?.toUpperCase()
+          }
         </div>
-        <div style={{ fontSize: '13px', color: 'var(--text-faint)' }}>{user.email}</div>
+
+        <div style={{ fontSize: '13px', color: 'var(--text-faint)', marginBottom: '12px' }}>{user.email}</div>
+
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button onClick={uploadFoto} style={{
+            background: 'var(--ink-soft)', border: '1px solid var(--ink-muted)',
+            borderRadius: 'var(--radius-md)', padding: '8px 14px',
+            color: 'var(--text-muted)', fontSize: '12px', cursor: 'pointer'
+          }}>
+            {uploadingPhoto ? '...' : t('profilo.uploadFoto')}
+          </button>
+
+          {user.photoURL && user.photoURL !== photoURL && (
+            <button onClick={usaFotoGoogle} style={{
+              background: 'var(--ink-soft)', border: '1px solid var(--ink-muted)',
+              borderRadius: 'var(--radius-md)', padding: '8px 14px',
+              color: 'var(--text-muted)', fontSize: '12px', cursor: 'pointer'
+            }}>
+              {t('profilo.usaFotoGoogle')}
+            </button>
+          )}
+
+          {photoURL && (
+            <button onClick={rimuoviFoto} style={{
+              background: 'none', border: '1px solid var(--ink-muted)',
+              borderRadius: 'var(--radius-md)', padding: '8px 14px',
+              color: 'var(--danger)', fontSize: '12px', cursor: 'pointer'
+            }}>
+              {t('profilo.rimuoviFoto')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Nome */}
