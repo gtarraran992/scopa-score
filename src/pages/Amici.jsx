@@ -100,9 +100,23 @@ export default function Amici({ user }) {
         <div className="card" style={{ marginBottom: '24px' }}>
           {results.map(u => (
             <div key={u.uid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }}>
-              <div>
-                <div style={{ fontSize: '15px', color: 'var(--cream)' }}>{u.displayName}</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{u.email}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '38px', height: '38px', borderRadius: '50%',
+                  background: 'var(--ink-muted)', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  fontSize: '15px', color: 'var(--gold)', fontFamily: 'var(--font-display)',
+                  overflow: 'hidden'
+                }}>
+                  {u.photoURL
+                    ? <img src={u.photoURL} alt={u.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : u.displayName?.[0]?.toUpperCase()
+                  }
+                </div>
+                <div>
+                  <div style={{ fontSize: '15px', color: 'var(--cream)' }}>{u.displayName}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{u.email}</div>
+                </div>
               </div>
               {friendUids.includes(u.uid) ? (
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('amici.giaAmico')}</span>
@@ -140,9 +154,13 @@ export default function Amici({ user }) {
                   width: '38px', height: '38px', borderRadius: '50%',
                   background: 'var(--ink-muted)', display: 'flex',
                   alignItems: 'center', justifyContent: 'center',
-                  fontSize: '15px', color: 'var(--gold)', fontFamily: 'var(--font-display)'
+                  fontSize: '15px', color: 'var(--gold)', fontFamily: 'var(--font-display)',
+                  overflow: 'hidden'
                 }}>
-                  {a.displayName?.[0]?.toUpperCase()}
+                  {a.photoURL
+                    ? <img src={a.photoURL} alt={a.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : a.displayName?.[0]?.toUpperCase()
+                  }
                 </div>
                 <div>
                   <div style={{ fontSize: '15px', color: 'var(--cream)' }}>{a.displayName}</div>
