@@ -207,14 +207,18 @@ export default function NuovaPartita({ user, isGuest }) {
                 background: 'var(--ink-muted)', border: '1px solid transparent',
                 marginBottom: '8px', cursor: 'pointer'
               }}>
-                <div style={{
-                  width: '36px', height: '36px', borderRadius: '50%',
-                  background: 'var(--ink-soft)', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  fontSize: '15px', color: 'var(--gold)', fontFamily: 'var(--font-display)'
-                }}>
-                  {a.displayName?.[0]?.toUpperCase()}
-                </div>
+<div style={{
+  width: '36px', height: '36px', borderRadius: '50%',
+  background: 'var(--ink-soft)', display: 'flex',
+  alignItems: 'center', justifyContent: 'center',
+  fontSize: '15px', color: 'var(--gold)', fontFamily: 'var(--font-display)',
+  overflow: 'hidden', flexShrink: 0
+}}>
+  {a.photoURL
+    ? <img src={a.photoURL} alt={a.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    : a.displayName?.[0]?.toUpperCase()
+  }
+</div>
                 <div>
                   <div style={{ fontSize: '15px', color: 'var(--cream)' }}>{a.displayName}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{a.email}</div>
