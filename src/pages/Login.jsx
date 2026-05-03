@@ -225,7 +225,7 @@ async function handleFacebook() {
           {t('login.google')}
         </button>
 
-        {/* Facebook */}
+        {/* Facebook
         <button onClick={handleFacebook} disabled={loading} style={{
           width: '100%', padding: '14px', marginBottom: '20px',
           background: '#1877F2', border: 'none',
@@ -237,6 +237,7 @@ async function handleFacebook() {
           </svg>
           {t('login.facebook')}
         </button>
+        */}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--ink-muted)' }} />
