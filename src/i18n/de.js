@@ -153,6 +153,11 @@ export default {
     errore: 'Fehler. Versuche es erneut.',
     emailReset: 'Gib deine E-Mail ein, um das Passwort zurückzusetzen.',
     emailNonTrovata: 'E-Mail nicht gefunden. Überprüfe, ob du die richtige E-Mail eingegeben hast.',
+    facebook: 'Mit Facebook fortfahren',
+    erroreFacebook: 'Fehler mit Facebook. Versuche es erneut.',
+    accountEsiste: 'Es existiert bereits ein Konto mit dieser E-Mail. Versuche dich mit Google anzumelden.',
+    collegaAccount: 'Du hast bereits ein Google-Konto mit dieser E-Mail. Möchtest du Facebook mit deinem Google-Konto verknüpfen?',
+    erroreCollegamento: 'Fehler beim Verknüpfen der Konten. Versuche es erneut.',
   },
   // Consenso
   consenso: {

@@ -153,6 +153,11 @@ export default {
     errore: 'Error. Inténtalo de nuevo.',
     emailReset: 'Introduce tu email para restablecer la contraseña.',
     emailNonTrovata: 'Email no encontrado. Comprueba que has introducido el email correcto.',
+    facebook: 'Continuar con Facebook',
+    erroreFacebook: 'Error con Facebook. Inténtalo de nuevo.',
+    accountEsiste: 'Ya existe una cuenta con este email. Intenta acceder con Google.',
+    collegaAccount: '¿Ya tienes una cuenta de Google con este email. ¿Quieres vincular Facebook a tu cuenta de Google?',
+    erroreCollegamento: 'Error al vincular las cuentas. Inténtalo de nuevo.',
   },
   // Consenso
   consenso: {

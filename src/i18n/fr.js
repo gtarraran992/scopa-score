@@ -153,6 +153,11 @@ export default {
     errore: 'Erreur. Réessaie.',
     emailReset: 'Entre ton email pour réinitialiser le mot de passe.',
     emailNonTrovata: "Email introuvable. Vérifie que tu as saisi le bon email.",
+    facebook: 'Continuer avec Facebook',
+    erroreFacebook: 'Erreur avec Facebook. Réessaie.',
+    accountEsiste: 'Un compte existe déjà avec cet email. Essaie de te connecter avec Google.',
+    collegaAccount: 'Tu as déjà un compte Google avec cet email. Veux-tu lier Facebook à ton compte Google ?',
+    erroreCollegamento: 'Erreur lors de la liaison des comptes. Réessaie.',
   },
   // Consenso
   consenso: {

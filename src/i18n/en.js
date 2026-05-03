@@ -147,6 +147,11 @@ classifica: {
     errore: 'Error. Try again.',
     emailReset: 'Enter your email to reset your password.',
     emailNonTrovata: 'Email not found. Check the email you entered.',
+    facebook: 'Continue with Facebook',
+    erroreFacebook: 'Error with Facebook. Please try again.',
+    accountEsiste: 'An account already exists with this email. Try signing in with Google.',
+    collegaAccount: 'You already have a Google account with this email. Do you want to link Facebook to your Google account?',
+    erroreCollegamento: 'Error linking accounts. Please try again.',
   },
   consenso: {
     titolo: 'Legal & Privacy',

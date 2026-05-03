@@ -153,6 +153,11 @@ classifica: {
     errore: 'Errore. Riprova.',
     emailReset: 'Inserisci la tua email per reimpostare la password.',
     emailNonTrovata: "Email non trovata. Controlla di aver inserito l'email corretta.",
+    facebook: 'Continua con Facebook',
+    erroreFacebook: 'Errore con Facebook. Riprova.',
+    accountEsiste: 'Esiste già un account con questa email. Prova ad accedere con Google.',
+    collegaAccount: 'Hai già un account Google con questa email. Vuoi collegare Facebook al tuo account Google?',
+    erroreCollegamento: 'Errore durante il collegamento degli account. Riprova.',
   },
   // Consenso
   consenso: {

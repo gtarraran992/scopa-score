@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { signInWithPopup, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth'
+import { signInWithPopup, signInWithCredential, linkWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, FacebookAuthProvider, sendPasswordResetEmail } from 'firebase/auth'
 import { doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { getPartiteLocali, clearPartiteLocali } from '../localDB'
 import { auth, googleProvider, db } from '../firebase'
@@ -14,14 +14,13 @@ async function saveUserToDb(user) {
   if (!snap.exists()) {
     await setDoc(ref, {
       uid: user.uid,
-      displayName: user.displayName || user.email.split('@')[0],
+      displayName: user.displayName || user.email?.split('@')[0] || 'Utente',
       email: user.email,
       friends: [],
       createdAt: new Date(),
-      photoURL: user.photoURL || null, // ✅ aggiunto
+      photoURL: user.photoURL || null,
     })
   } else {
-    // ✅ aggiorna photoURL solo se l'utente non ha una foto custom su Storage
     const data = snap.data()
     const isStoragePhoto = data.photoURL?.includes('firebasestorage')
     if (!isStoragePhoto && user.photoURL && data.photoURL !== user.photoURL) {
@@ -78,6 +77,66 @@ export default function Login() {
     }
     setLoading(false)
   }
+
+async function handleFacebook() {
+  setLoading(true)
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const result = await FirebaseAuthentication.signInWithFacebook()
+      const credential = FacebookAuthProvider.credential(result.credential?.accessToken)
+      const res = await signInWithCredential(auth, credential)
+      await saveUserToDb(res.user)
+      await migraPartiteLocali(res.user)
+    } else {
+      const provider = new FacebookAuthProvider()
+      const res = await signInWithPopup(auth, provider)
+      await saveUserToDb(res.user)
+      await migraPartiteLocali(res.user)
+    }
+  } catch (e) {
+    console.error(e)
+    if (e.code === 'auth/account-exists-with-different-credential') {
+      // Salva il credenziale Facebook per dopo
+      const fbCredential = e.customData?.email
+        ? FacebookAuthProvider.credentialFromError(e)
+        : null
+
+      const conferma = window.confirm(t('login.collegaAccount'))
+      if (!conferma) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        // Login con Google
+        let googleUser
+        if (Capacitor.isNativePlatform()) {
+          const result = await FirebaseAuthentication.signInWithGoogle()
+          const googleCredential = GoogleAuthProvider.credential(result.credential?.idToken)
+          const res = await signInWithCredential(auth, googleCredential)
+          googleUser = res.user
+        } else {
+          const res = await signInWithPopup(auth, googleProvider)
+          googleUser = res.user
+        }
+
+        // Collega Facebook all'account Google
+        if (fbCredential) {
+          await linkWithCredential(googleUser, fbCredential)
+        }
+
+        await saveUserToDb(googleUser)
+        await migraPartiteLocali(googleUser)
+      } catch (linkError) {
+        console.error(linkError)
+        setError(t('login.erroreCollegamento'))
+      }
+    } else {
+      setError(t('login.erroreFacebook'))
+    }
+  }
+  setLoading(false)
+}
 
   async function handleEmail() {
     setLoading(true)
@@ -150,8 +209,9 @@ export default function Login() {
           ← {t('login.continua')}
         </button>
 
+        {/* Google */}
         <button onClick={handleGoogle} disabled={loading} style={{
-          width: '100%', padding: '14px', marginBottom: '20px',
+          width: '100%', padding: '14px', marginBottom: '12px',
           background: 'var(--ink-soft)', border: '1px solid var(--ink-muted)',
           borderRadius: 'var(--radius-lg)', color: 'var(--cream)',
           fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
@@ -163,6 +223,19 @@ export default function Login() {
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
           </svg>
           {t('login.google')}
+        </button>
+
+        {/* Facebook */}
+        <button onClick={handleFacebook} disabled={loading} style={{
+          width: '100%', padding: '14px', marginBottom: '20px',
+          background: '#1877F2', border: 'none',
+          borderRadius: 'var(--radius-lg)', color: '#fff',
+          fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          {t('login.facebook')}
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
