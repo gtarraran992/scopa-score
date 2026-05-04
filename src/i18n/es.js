@@ -89,7 +89,7 @@ export default {
     sconfitte: 'Derrotas',
     percentualeVittoria: 'Porcentaje de victorias',
     giocatoriFrequenti: 'Jugadores más frecuentes',
-    ultimePArtite: 'Últimas partidas',
+    ultimePartite: 'Últimas partidas',
     inCorso: 'En curso',
     vittoria: 'Victoria',
     sconfitta: 'Derrota',

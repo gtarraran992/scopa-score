@@ -22,6 +22,19 @@ function calcTotalsSquadre(squadre, mani) {
   })
 }
 
+function getMyIdx(players, user, createdBy) {
+  const idx = players.findIndex(pl => pl.uid === user?.uid)
+  return idx === -1 && createdBy === user?.uid ? 0 : idx
+}
+
+function getMySquadra(squadre, user, createdBy) {
+  const idx = squadre.findIndex(s => s.players.some(p => p.uid === user?.uid))
+  if (idx !== -1) return idx
+  const isCreator = createdBy === user?.uid
+  if (isCreator) return 0
+  return -1
+}
+
 export default function Partita({ user, isGuest }) {
   const { t } = useTranslation()
   const { id } = useParams()
@@ -67,12 +80,12 @@ export default function Partita({ user, isGuest }) {
             if (data.modalita === 'squadre') {
               const snapTotals = calcTotalsSquadre(data.squadre, data.mani || []).map(t => t.total)
               const winnerSi = snapTotals.indexOf(Math.max(...snapTotals))
-              const mySquadra = data.squadre.findIndex(s => s.players.some(p => p.uid === user?.uid))
+              const mySquadra = getMySquadra(data.squadre, user, data.createdBy)
               playSound(mySquadra === winnerSi ? 'vittoria' : 'sconfitta')
             } else {
               const snapTotals = calcTotals(data.players, data.mani || []).map(t => t.total)
               const snapWinnerIdx = snapTotals.indexOf(Math.max(...snapTotals))
-              const myIdx = data.players.findIndex(pl => pl.uid === user?.uid)
+              const myIdx = getMyIdx(data.players, user, data.createdBy)
               playSound(myIdx === snapWinnerIdx ? 'vittoria' : 'sconfitta')
             }
             eraConclusa.current = true
@@ -268,12 +281,12 @@ export default function Partita({ user, isGuest }) {
         if (isSquadre) {
           const nuoviTotals = calcTotalsSquadre(partita.squadre, nuoveMani).map(t => t.total)
           const winnerSi = nuoviTotals.indexOf(Math.max(...nuoviTotals))
-          const mySquadra = partita.squadre.findIndex(s => s.players.some(p => p.uid === user?.uid))
+          const mySquadra = getMySquadra(partita.squadre, user, partita.createdBy)
           playSound(mySquadra === winnerSi ? 'vittoria' : 'sconfitta')
         } else {
           const nuoviTotals = calcTotals(partita.players, nuoveMani).map(t => t.total)
           const nuovoWinnerIdx = nuoviTotals.indexOf(Math.max(...nuoviTotals))
-          const myIdx = partita.players.findIndex(pl => pl.uid === user?.uid)
+          const myIdx = getMyIdx(partita.players, user, partita.createdBy)
           playSound(myIdx === nuovoWinnerIdx ? 'vittoria' : 'sconfitta')
         }
       }
@@ -288,12 +301,12 @@ export default function Partita({ user, isGuest }) {
         if (isSquadre) {
           const nuoviTotals = calcTotalsSquadre(partita.squadre, nuoveMani).map(t => t.total)
           const winnerSi = nuoviTotals.indexOf(Math.max(...nuoviTotals))
-          const mySquadra = partita.squadre.findIndex(s => s.players.some(p => p.uid === user?.uid))
+          const mySquadra = getMySquadra(partita.squadre, user, partita.createdBy)
           playSound(mySquadra === winnerSi ? 'vittoria' : 'sconfitta')
         } else {
           const nuoviTotals = calcTotals(partita.players, nuoveMani).map(t => t.total)
           const nuovoWinnerIdx = nuoviTotals.indexOf(Math.max(...nuoviTotals))
-          const myIdx = partita.players.findIndex(pl => pl.uid === user?.uid)
+          const myIdx = getMyIdx(partita.players, user, partita.createdBy)
           playSound(myIdx === nuovoWinnerIdx ? 'vittoria' : 'sconfitta')
         }
       }

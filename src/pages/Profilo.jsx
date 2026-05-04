@@ -92,6 +92,19 @@ export default function Profilo({ user }) {
           const hoVinto = winnerSi === mySquadra
           if (hoVinto) vinte++
           else perse++
+
+          squadre.forEach((squadra, si) => {
+            if (si === mySquadra) return
+            squadra.players.forEach(pl => {
+              if (!pl.name) return
+              const key = pl.name.trim().toLowerCase()
+              if (!avversariMap[key]) {
+                avversariMap[key] = { name: pl.name, partite: 0, vinteContro: 0 }
+              }
+              avversariMap[key].partite++
+              if (hoVinto) avversariMap[key].vinteContro++
+            })
+          })
         } else {
           const totals = calcTotals(p.players, p.mani || [])
           const scores = totals.map(t => t.total)
@@ -196,14 +209,12 @@ export default function Profilo({ user }) {
               padding: '8px 0 32px',
             }}
           >
-            {/* Handle */}
             <div style={{
               width: '36px', height: '4px',
               background: 'var(--ink-muted)',
               borderRadius: '2px',
               margin: '12px auto 20px',
             }} />
-
             <div style={{
               fontSize: '12px', fontWeight: '500', letterSpacing: '0.07em',
               textTransform: 'uppercase', color: 'var(--text-muted)',
@@ -211,15 +222,13 @@ export default function Profilo({ user }) {
             }}>
               {t('profilo.lingua')}
             </div>
-
             {LINGUE.map(l => (
               <button
                 key={l.id}
                 onClick={() => changeLingua(l.id)}
                 style={{
                   width: '100%', padding: '16px 20px',
-                  background: 'none',
-                  border: 'none',
+                  background: 'none', border: 'none',
                   borderBottom: '1px solid var(--ink-muted)',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   cursor: 'pointer',
@@ -372,7 +381,7 @@ export default function Profilo({ user }) {
       {/* Storico partite */}
       {storico.length > 0 && (
         <>
-          <div style={sectionTitle}>{t('profilo.ultimePArtite')}</div>
+          <div style={sectionTitle}>{t('profilo.ultimePartite')}</div>
           <div className="card" style={{ marginBottom: '24px' }}>
             {storico.slice(0, 10).map((p, i) => {
               const isSquadre = p.modalita === 'squadre'
