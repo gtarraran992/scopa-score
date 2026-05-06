@@ -35,10 +35,19 @@ workflows:
             capacitor_pods
           end
           EOF
-      - name: Inject GoogleService-Info.plist
+      - name: Add GoogleService-Info.plist to Xcode project
         script: |
           echo $GOOGLE_SERVICE_INFO_PLIST | base64 --decode > ios/App/App/GoogleService-Info.plist
-          ls -la ios/App/App/GoogleService-Info.plist
+          ruby << 'RUBY'
+          require 'xcodeproj'
+          project_path = 'ios/App/App.xcodeproj'
+          project = Xcodeproj::Project.open(project_path)
+          target = project.targets.first
+          group = project.main_group['App']
+          file_ref = group.new_reference('GoogleService-Info.plist')
+          target.add_file_references([file_ref])
+          project.save
+          RUBY
       - name: Install CocoaPods
         script: |
           cd ios/App
