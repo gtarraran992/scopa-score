@@ -20,7 +20,7 @@ workflows:
           use_frameworks!
           install! 'cocoapods', :disable_input_output_paths => true
           def capacitor_pods
-            pod 'Capacitor', :path => '/Users/builder/clone/node_modules/@capacitor/core'
+            pod 'Capacitor', :path => '/Users/builder/clone/node_modules/@capacitor/ios'
             pod 'CapacitorApp', :path => '/Users/builder/clone/node_modules/@capacitor/app'
             pod 'CapacitorCamera', :path => '/Users/builder/clone/node_modules/@capacitor/camera'
             pod 'CapacitorLocalNotifications', :path => '/Users/builder/clone/node_modules/@capacitor/local-notifications'
