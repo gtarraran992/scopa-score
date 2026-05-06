@@ -6,13 +6,14 @@ use_frameworks!
 install! 'cocoapods', :disable_input_output_paths => true
 
 def capacitor_pods
-  pod 'Capacitor', :path => '../../node_modules/@capacitor/core'
-  pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
-  pod 'CapacitorCamera', :path => '../../node_modules/@capacitor/camera'
-  pod 'CapacitorLocalNotifications', :path => '../../node_modules/@capacitor/local-notifications'
-  pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
-  pod 'CapacitorBrowser', :path => '../../node_modules/@capacitor/browser'
-  pod 'CapacitorCommunityNativeAudio', :path => '../../node_modules/@capacitor-community/native-audio'
+ pod 'Capacitor', :path => '/Users/builder/clone/node_modules/@capacitor/ios'
+ pod 'CapacitorApp', :path => '/Users/builder/clone/node_modules/@capacitor/app'
+ pod 'CapacitorFirebaseAuthentication', :path => '/Users/builder/clone/node_modules/@capacitor-firebase/authentication'
+ pod 'CapacitorCamera', :path => '/Users/builder/clone/node_modules/@capacitor/camera'
+ pod 'CapacitorLocalNotifications', :path => '/Users/builder/clone/node_modules/@capacitor/local-notifications'
+ pod 'CapacitorPushNotifications', :path => '/Users/builder/clone/node_modules/@capacitor/push-notifications'
+ pod 'CapacitorBrowser', :path => '/Users/builder/clone/node_modules/@capacitor/browser'
+ pod 'CapacitorCommunityNativeAudio', :path => '/Users/builder/clone/node_modules/@capacitor-community/native-audio'
 end
 
 target 'App' do
