@@ -38,16 +38,18 @@ workflows:
       - name: Add GoogleService-Info.plist to Xcode project
         script: |
           echo $GOOGLE_SERVICE_INFO_PLIST | base64 --decode > ios/App/App/GoogleService-Info.plist
-          ruby << 'RUBY'
+          ruby -e "
           require 'xcodeproj'
-          project_path = 'ios/App/App.xcodeproj'
-          project = Xcodeproj::Project.open(project_path)
+          project = Xcodeproj::Project.open('ios/App/App.xcodeproj')
           target = project.targets.first
           group = project.main_group['App']
-          file_ref = group.new_reference('GoogleService-Info.plist')
-          target.add_file_references([file_ref])
+          existing = group.files.find { |f| f.path == 'GoogleService-Info.plist' }
+          if existing
+            # Rimuovi duplicati dalle build phases
+            target.resources_build_phase.files.select { |f| f.file_ref == existing }.drop(1).each(&:remove_from_project)
+          end
           project.save
-          RUBY
+          "
       - name: Install CocoaPods
         script: |
           cd ios/App
