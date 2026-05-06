@@ -37,6 +37,7 @@ workflows:
         script: |
           cd ios/App
           pod deintegrate || true
+          rm -f Podfile.lock
           pod install --repo-update --clean-install
       - name: Build iOS
         script: |
