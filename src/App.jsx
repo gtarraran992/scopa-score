@@ -23,6 +23,9 @@ import DenariLogo from './components/DenariLogo'
 import { App as CapacitorApp } from '@capacitor/app'
 import Consenso from './pages/Consenso'
 
+const isIOS = Capacitor.getPlatform() === 'ios'
+const isAndroid = Capacitor.getPlatform() === 'android'
+
 export default function App() {
   const [user, setUser] = useState(undefined)
   const [showSplash, setShowSplash] = useState(() => {
@@ -59,36 +62,18 @@ export default function App() {
       if (now >= next) next.setDate(next.getDate() + 1)
 
       const lang = localStorage.getItem('i18nextLng') || 'it'
-      const isEn = lang.startsWith('en')
 
-async function scheduleNotifica() {
-  const { display } = await LocalNotifications.checkPermissions()
-  if (display !== 'granted') {
-    const { display: granted } = await LocalNotifications.requestPermissions()
-    if (granted !== 'granted') return
-  }
-  await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
+      const bodies = {
+        it: 'Sfida un amico a Scopa oggi!',
+        en: 'Challenge a friend to Scopa today!',
+        es: '¡Reta a un amigo a jugar a la Scopa hoy!',
+        fr: "Défie un ami à la Scopa aujourd'hui !",
+        de: 'Fordere heute einen Freund zur Scopa heraus!',
+      }
 
-  const now = new Date()
-  const next = new Date()
-  next.setHours(12, 0, 0, 0)
-  if (now >= next) next.setDate(next.getDate() + 1)
+      const body = bodies[lang] || bodies['it']
 
-  const lang = localStorage.getItem('i18nextLng') || 'it'
-
-  const bodies = {
-    it: 'Sfida un amico a Scopa oggi!',
-    en: 'Challenge a friend to Scopa today!',
-    es: '¡Reta a un amigo a jugar a la Scopa hoy!',
-    fr: 'Défie un ami à la Scopa aujourd\'hui !',
-    de: 'Fordere heute einen Freund zur Scopa heraus!',
-  }
-
-  const body = bodies[lang] || bodies['it']
-
-  await LocalNotifications.schedule({
-    notifications: [
-      {
+      const notification = {
         id: 1,
         title: '🃏 ScopaScore',
         body,
@@ -98,12 +83,15 @@ async function scheduleNotifica() {
           every: 'day',
         },
         sound: null,
-        smallIcon: 'ic_stat_notify',
-        channelId: 'promemoria',
       }
-    ]
-  })
-}
+
+      // smallIcon e channelId solo su Android
+      if (isAndroid) {
+        notification.smallIcon = 'ic_stat_notify'
+        notification.channelId = 'promemoria'
+      }
+
+      await LocalNotifications.schedule({ notifications: [notification] })
     }
 
     scheduleNotifica()
@@ -133,9 +121,9 @@ async function scheduleNotifica() {
     registerFCMToken()
   }, [user?.uid])
 
-  // 4. Back button Android
+  // 4. Back button — solo Android (iOS gestisce il back natively)
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
+    if (!isAndroid) return
     const listener = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
       if (canGoBack) {
         window.history.back()
