@@ -16,7 +16,7 @@ workflows:
           npx cap sync ios
           cat > ios/App/Podfile << 'EOF'
           require_relative '/Users/builder/clone/node_modules/@capacitor/ios/scripts/pods_helpers'
-          platform :ios, '14.0'
+          platform :ios, '16.0'
           use_frameworks!
           install! 'cocoapods', :disable_input_output_paths => true
           def capacitor_pods
