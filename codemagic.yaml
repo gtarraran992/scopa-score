@@ -46,7 +46,6 @@ workflows:
           pod install --repo-update --clean-install
       - name: Build iOS
         script: |
-          cat ios/App/Podfile.lock
           xcodebuild \
             -workspace ios/App/App.xcworkspace \
             -scheme App \
@@ -54,6 +53,7 @@ workflows:
             -sdk iphonesimulator \
             -derivedDataPath ios/build \
             CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tail -50
+            PODS_PODFILE_DIR_PATH=/Users/builder/clone/ios/App \
+            PODS_ROOT=/Users/builder/clone/ios/App/Pods
     artifacts:
       - ios/build/**/*.app
