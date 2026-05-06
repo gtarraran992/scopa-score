@@ -14,7 +14,7 @@ workflows:
       - name: Set build number
         script: |
           cd ios/App
-          agvtool new-version -all $CM_BUILD_NUMBER
+          agvtool bump -all
       - name: Build web
         script: npm run build
       - name: Sync Capacitor
