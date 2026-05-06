@@ -3,8 +3,6 @@ require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 platform :ios, '14.0'
 use_frameworks!
 
-# workaround to avoid Xcode caching of Pods that requires
-# temporary disabling of Pods caching
 install! 'cocoapods', :disable_input_output_paths => true
 
 def capacitor_pods
