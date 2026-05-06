@@ -14,7 +14,24 @@ workflows:
       - name: Sync Capacitor
         script: |
           npx cap sync ios
-          cp ios/App/Podfile.backup ios/App/Podfile
+          cat > ios/App/Podfile << 'EOF'
+          require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
+          platform :ios, '14.0'
+          use_frameworks!
+          install! 'cocoapods', :disable_input_output_paths => true
+          def capacitor_pods
+            pod 'Capacitor', :path => '../../node_modules/@capacitor/core'
+            pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
+            pod 'CapacitorCamera', :path => '../../node_modules/@capacitor/camera'
+            pod 'CapacitorLocalNotifications', :path => '../../node_modules/@capacitor/local-notifications'
+            pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
+            pod 'CapacitorBrowser', :path => '../../node_modules/@capacitor/browser'
+            pod 'CapacitorCommunityNativeAudio', :path => '../../node_modules/@capacitor-community/native-audio'
+          end
+          target 'App' do
+            capacitor_pods
+          end
+          EOF
       - name: Install CocoaPods
         script: |
           cd ios/App
