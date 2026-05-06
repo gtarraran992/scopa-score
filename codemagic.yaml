@@ -17,7 +17,7 @@ workflows:
         script: |
           cd ios/App
           pod init
-          pod install
+          pod install --repo-update
       - name: Build iOS
         script: |
           xcodebuild \
