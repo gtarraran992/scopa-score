@@ -34,8 +34,10 @@ workflows:
           EOF
       - name: Install CocoaPods
         script: |
+          echo "Checking node_modules..."
+          ls /Users/builder/clone/node_modules/@capacitor/
           cd ios/App
-          pod install --repo-update --project-directory=.
+          pod install --repo-update
       - name: Build iOS
         script: |
           xcodebuild \
