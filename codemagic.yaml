@@ -6,9 +6,14 @@ workflows:
       node: 22
       xcode: latest
       cocoapods: default
+      groups:
+        - ios
     scripts:
       - name: Install dependencies
         script: npm install
+      - name: Inject GoogleService-Info.plist
+        script: |
+          echo $GOOGLE_SERVICE_INFO_PLIST | base64 --decode > ios/App/App/GoogleService-Info.plist
       - name: Build web
         script: npm run build
       - name: Sync Capacitor
