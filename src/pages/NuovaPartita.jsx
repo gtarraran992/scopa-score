@@ -2,9 +2,30 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
-import { DEFAULT_TARGET } from '../config'
 import { savePartitaLocale, generateId } from '../localDB'
 import { useTranslation } from 'react-i18next'
+
+function calcTarget(numGiocatori) {
+  if (numGiocatori <= 2) return 11
+  if (numGiocatori === 3) return 16
+  return 21
+}
+
+function getOpzioniSalvate() {
+  try {
+    const saved = localStorage.getItem('scopa-opzioni')
+    if (saved) return JSON.parse(saved)
+  } catch {}
+  return { rebello: false, napoli: false }
+}
+
+function getTargetSalvato(fallback) {
+  try {
+    const saved = localStorage.getItem('scopa-target-override')
+    if (saved !== null) return parseInt(saved)
+  } catch {}
+  return fallback
+}
 
 export default function NuovaPartita({ user, isGuest }) {
   const { t } = useTranslation()
@@ -18,12 +39,39 @@ export default function NuovaPartita({ user, isGuest }) {
     { players: [{ name: isGuest ? '' : (user?.displayName || user?.email?.split('@')[0] || ''), uid: isGuest ? null : user?.uid }, { name: '', uid: null }] },
     { players: [{ name: '', uid: null }, { name: '', uid: null }] },
   ])
-  const [target, setTarget] = useState(DEFAULT_TARGET)
-  const [opzioni, setOpzioni] = useState({ rebello: true, napoli: true })
+  const [target, setTarget] = useState(getTargetSalvato(calcTarget(2)))
+  const [opzioni, setOpzioni] = useState(getOpzioniSalvate)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [amici, setAmici] = useState([])
   const [showAmiciPicker, setShowAmiciPicker] = useState(null)
+
+  useEffect(() => {
+    if (modalita === 'classica') {
+      setTarget(getTargetSalvato(calcTarget(players.length)))
+    }
+  }, [players.length, modalita])
+
+  useEffect(() => {
+    if (modalita === 'squadre') {
+      setTarget(getTargetSalvato(21))
+    } else if (modalita === 'classica') {
+      setTarget(getTargetSalvato(calcTarget(players.length)))
+    }
+  }, [modalita])
+
+  function updateTarget(val) {
+    setTarget(val)
+    localStorage.setItem('scopa-target-override', val)
+  }
+
+  function updateOpzioni(key) {
+    setOpzioni(o => {
+      const nuove = { ...o, [key]: !o[key] }
+      localStorage.setItem('scopa-opzioni', JSON.stringify(nuove))
+      return nuove
+    })
+  }
 
   useEffect(() => {
     if (isGuest || !user) return
@@ -207,18 +255,18 @@ export default function NuovaPartita({ user, isGuest }) {
                 background: 'var(--ink-muted)', border: '1px solid transparent',
                 marginBottom: '8px', cursor: 'pointer'
               }}>
-<div style={{
-  width: '36px', height: '36px', borderRadius: '50%',
-  background: 'var(--ink-soft)', display: 'flex',
-  alignItems: 'center', justifyContent: 'center',
-  fontSize: '15px', color: 'var(--gold)', fontFamily: 'var(--font-display)',
-  overflow: 'hidden', flexShrink: 0
-}}>
-  {a.photoURL
-    ? <img src={a.photoURL} alt={a.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-    : a.displayName?.[0]?.toUpperCase()
-  }
-</div>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  background: 'var(--ink-soft)', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  fontSize: '15px', color: 'var(--gold)', fontFamily: 'var(--font-display)',
+                  overflow: 'hidden', flexShrink: 0
+                }}>
+                  {a.photoURL
+                    ? <img src={a.photoURL} alt={a.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : a.displayName?.[0]?.toUpperCase()
+                  }
+                </div>
                 <div>
                   <div style={{ fontSize: '15px', color: 'var(--cream)' }}>{a.displayName}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{a.email}</div>
@@ -377,9 +425,9 @@ export default function NuovaPartita({ user, isGuest }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>{t('nuovaPartita.target')}</span>
               <div style={{ display: 'flex', alignItems: 'center', background: 'var(--ink-muted)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-                <button onClick={() => setTarget(t => Math.max(5, t - 1))} style={stepBtn}>−</button>
+                <button onClick={() => updateTarget(Math.max(5, target - 1))} style={stepBtn}>−</button>
                 <span style={{ width: '48px', textAlign: 'center', fontSize: '16px', fontWeight: '500', color: 'var(--cream)' }}>{target}</span>
-                <button onClick={() => setTarget(t => t + 1)} style={stepBtn}>+</button>
+                <button onClick={() => updateTarget(target + 1)} style={stepBtn}>+</button>
               </div>
             </div>
           </div>
@@ -399,7 +447,7 @@ export default function NuovaPartita({ user, isGuest }) {
                   <div style={{ fontSize: '15px', color: 'var(--cream)' }}>{opt.label}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-faint)', marginTop: '2px' }}>{opt.desc}</div>
                 </div>
-                <div onClick={() => setOpzioni(o => ({ ...o, [opt.key]: !o[opt.key] }))} style={{
+                <div onClick={() => updateOpzioni(opt.key)} style={{
                   width: '44px', height: '26px', borderRadius: '13px',
                   background: opzioni[opt.key] ? 'var(--gold)' : 'var(--ink-muted)',
                   position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0
