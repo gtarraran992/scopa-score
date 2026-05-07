@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .env
+*.b64
 
 # Editor directories and files
 .vscode/*
@@ -23,7 +24,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-android/app/google-services.json
+
 
 # Bubblewrap
 *.keystore
@@ -37,11 +38,16 @@ manifest-checksum.txt
 build/
 .gradle/
 
-# Android - escludi solo file sensibili e build
+# Android
 android/app/build/
 android/.gradle/
 android/app/google-services.json
 android/local.properties
+
+# iOS
+ios/App/App/GoogleService-Info.plist
+ios/App/App/Assets.xcassets/SplashIcon.imageset/
+android/app/src/main/res/values/secrets.xml
 
 # Firebase Functions
 functions/node_modules

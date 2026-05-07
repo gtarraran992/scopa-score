@@ -496,5 +496,4 @@ const stepBtn = {
   alignItems: 'center', justifyContent: 'center'
 }
 
-const btnConfirm = { flex: 1, padding: '10px', background: 'linear-gradient(135deg, #c9963a, #e8b84b)', border: 'none', borderRadius: '10px', color: '#1a1a2e', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }
 const btnCancel = { flex: 1, padding: '10px', background: 'transparent', border: '1px solid #3d3d58', borderRadius: '10px', color: '#9b95a8', fontSize: '13px', cursor: 'pointer' }

@@ -6,8 +6,6 @@ export const PUNTI = [
   { key: 'primiera', label: 'Primiera' },
 ]
 
-export const DEFAULT_TARGET = 21
-
 export function calcTotals(players, mani) {
   return players.map((_, pi) => {
     const totByKey = {}
