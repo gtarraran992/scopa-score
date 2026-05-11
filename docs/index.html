@@ -3,149 +3,429 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ScopaScore — Privacy Policy</title>
+  <title>ScopaScore — Privacy & Termini</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --gold: #c9963a;
+      --gold-light: #e8b84b;
+      --gold-dim: rgba(201,150,58,0.15);
+      --bg: #0f0d09;
+      --bg-card: #161310;
+      --border: rgba(201,150,58,0.18);
+      --text: #f0ead8;
+      --text-muted: #7a7060;
+      --text-body: #c8bfa8;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: system-ui, sans-serif;
-      background: #f5f5f3;
-      color: #1a1a18;
-      line-height: 1.7;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-body);
+      line-height: 1.75;
+      min-height: 100vh;
     }
-    .container {
-      max-width: 680px;
+
+    /* Grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
       margin: 0 auto;
-      padding: 48px 24px;
+      padding: 64px 28px 80px;
     }
-    .logo {
-      font-size: 24px;
+
+    /* Header */
+    .header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 64px;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .logo-wrap {
+      margin-bottom: 20px;
+      filter: drop-shadow(0 0 24px rgba(201,150,58,0.45));
+    }
+
+    .app-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
       font-weight: 600;
-      color: #c9963a;
-      margin-bottom: 8px;
+      color: var(--text);
+      letter-spacing: 0.04em;
     }
-    .subtitle {
+
+    .app-name span { color: var(--gold); }
+
+    .app-sub {
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Gold divider */
+    .gold-line {
+      width: 48px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 28px auto 0;
+    }
+
+    /* Section */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px 36px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.2s; }
+    .section:nth-child(4) { animation-delay: 0.3s; }
+
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 6px;
+    }
+
+    .section-badge::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 1px;
+      background: var(--gold);
+      opacity: 0.5;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .section-date {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 28px 0 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h2:first-of-type { margin-top: 0; }
+
+    p {
+      color: var(--text-body);
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    ul, ol {
+      color: var(--text-body);
+      padding-left: 0;
+      margin-bottom: 10px;
+      list-style: none;
+    }
+
+    ul li, ol li {
+      font-size: 15px;
+      padding: 5px 0 5px 20px;
+      position: relative;
+    }
+
+    ul li::before {
+      content: '·';
+      position: absolute;
+      left: 6px;
+      color: var(--gold);
+      font-size: 18px;
+      line-height: 1.4;
+    }
+
+    ol { counter-reset: ol-counter; }
+    ol li { counter-increment: ol-counter; }
+    ol li::before {
+      content: counter(ol-counter) '.';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
       font-size: 13px;
-      color: #888;
-      margin-bottom: 40px;
+      font-weight: 500;
+      line-height: 1.9;
     }
-    h1 { font-size: 28px; margin-bottom: 8px; }
-    h2 { font-size: 18px; margin: 28px 0 8px; color: #1a1a18; }
-    p { color: #444; margin-bottom: 8px; }
-    ul { color: #444; padding-left: 20px; margin-bottom: 8px; }
-    li { margin-bottom: 4px; }
-    a { color: #c9963a; }
-    .date { font-size: 13px; color: #888; margin-bottom: 32px; }
-    .divider { height: 1px; background: #ddd; margin: 40px 0; }
-    .footer { font-size: 13px; color: #888; text-align: center; }
+
+    a {
+      color: var(--gold-light);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(232,184,75,0.3);
+      transition: border-color 0.2s;
+    }
+    a:hover { border-color: var(--gold-light); }
+
+    strong { color: var(--text); font-weight: 500; }
+
+    /* Delete account highlight box */
+    .highlight-box {
+      background: var(--gold-dim);
+      border: 1px solid rgba(201,150,58,0.3);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 16px;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 48px;
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      animation: fadeUp 0.7s 0.4s ease both;
+    }
+
+    .footer a { color: var(--text-muted); border-color: transparent; }
+    .footer a:hover { color: var(--gold); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .section { padding: 28px 20px; }
+      .app-name { font-size: 26px; }
+      .section-title { font-size: 22px; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="logo">♠ ScopaScore</div>
-    <div class="subtitle">Segnapunti per il gioco di carte Scopa</div>
+  <div class="wrapper">
 
-    <h1>Privacy Policy</h1>
-    <p class="date">Ultimo aggiornamento: Aprile 2026</p>
+    <!-- Header -->
+    <div class="header">
+      <div class="logo-wrap">
+        <svg viewBox="0 0 200 200" width="80" height="80">
+          <defs>
+            <radialGradient id="dlbg" cx="50%" cy="45%" r="55%">
+              <stop offset="0%" stop-color="#2a1a08"/>
+              <stop offset="100%" stop-color="#120d04"/>
+            </radialGradient>
+            <radialGradient id="dlpG" cx="50%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#f0c84a"/>
+              <stop offset="100%" stop-color="#9a6e1a"/>
+            </radialGradient>
+            <radialGradient id="dlpGr" cx="50%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#4a8a6a"/>
+              <stop offset="100%" stop-color="#1a3a2a"/>
+            </radialGradient>
+            <radialGradient id="dlcR" cx="45%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#c9963a"/>
+              <stop offset="100%" stop-color="#7a5010"/>
+            </radialGradient>
+            <radialGradient id="dlfC" cx="45%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#e8b84b"/>
+              <stop offset="100%" stop-color="#c9963a"/>
+            </radialGradient>
+          </defs>
+          <circle cx="100" cy="100" r="96" fill="url(#dlbg)"/>
+          <circle cx="100" cy="5" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="129.4" cy="12.3" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="154.3" cy="33.5" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="170.6" cy="63.4" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="175" cy="97.5" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="166.9" cy="131.1" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="147.4" cy="158.2" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="119.5" cy="175.5" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="87.2" cy="181.1" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="55.6" cy="174.3" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="28.6" cy="156.2" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="10.2" cy="128.5" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="3" cy="97.5" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="8.6" cy="63.4" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="26.5" cy="33.5" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="53" cy="12.3" r="5" fill="#c9963a" opacity="0.8"/>
+          <circle cx="100" cy="100" r="88" fill="none" stroke="#c9963a" stroke-width="1.5" opacity="0.5"/>
+          <!-- Petals alternating gold/green -->
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpG)" opacity="0.95"/>
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpGr)" opacity="0.95" transform="rotate(36 100 100)"/>
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpG)" opacity="0.95" transform="rotate(72 100 100)"/>
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpGr)" opacity="0.95" transform="rotate(108 100 100)"/>
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpG)" opacity="0.95" transform="rotate(144 100 100)"/>
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpGr)" opacity="0.95" transform="rotate(180 100 100)"/>
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpG)" opacity="0.95" transform="rotate(216 100 100)"/>
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpGr)" opacity="0.95" transform="rotate(252 100 100)"/>
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpG)" opacity="0.95" transform="rotate(288 100 100)"/>
+          <ellipse cx="100" cy="45" rx="14" ry="22" fill="url(#dlpGr)" opacity="0.95" transform="rotate(324 100 100)"/>
+          <!-- Center -->
+          <circle cx="100" cy="100" r="34" fill="url(#dlcR)" stroke="#e8b84b" stroke-width="1.5"/>
+          <ellipse cx="100" cy="78" rx="8" ry="13" fill="url(#dlfC)" opacity="0.9"/>
+          <ellipse cx="100" cy="78" rx="8" ry="13" fill="url(#dlfC)" opacity="0.9" transform="rotate(60 100 100)"/>
+          <ellipse cx="100" cy="78" rx="8" ry="13" fill="url(#dlfC)" opacity="0.9" transform="rotate(120 100 100)"/>
+          <ellipse cx="100" cy="78" rx="8" ry="13" fill="url(#dlfC)" opacity="0.9" transform="rotate(180 100 100)"/>
+          <ellipse cx="100" cy="78" rx="8" ry="13" fill="url(#dlfC)" opacity="0.9" transform="rotate(240 100 100)"/>
+          <ellipse cx="100" cy="78" rx="8" ry="13" fill="url(#dlfC)" opacity="0.9" transform="rotate(300 100 100)"/>
+          <circle cx="100" cy="100" r="10" fill="#2a1a08" stroke="#e8b84b" stroke-width="1.5"/>
+          <circle cx="100" cy="100" r="5" fill="#e8b84b"/>
+        </svg>
+      </div>
+      <div class="app-name">Scopa<span>Score</span></div>
+      <div class="app-sub">Segnapunti per il gioco di carte Scopa</div>
+      <div class="gold-line"></div>
+    </div>
 
-    <h2>1. Introduzione</h2>
-    <p>ScopaScore rispetta la tua privacy. Questa Privacy Policy descrive come raccogliamo, utilizziamo e proteggiamo le tue informazioni personali.</p>
+    <!-- Privacy Policy -->
+    <div class="section">
+      <div class="section-badge">Documento legale</div>
+      <div class="section-title">Privacy Policy</div>
+      <div class="section-date">Ultimo aggiornamento: Aprile 2026</div>
 
-    <h2>2. Dati raccolti</h2>
-    <p>Raccogliamo i seguenti dati:</p>
-    <ul>
-      <li>Email e nome visualizzato (tramite registrazione o login Google)</li>
-      <li>Dati delle partite (punteggi, giocatori, date)</li>
-      <li>Lista amici aggiunti nell'app</li>
-    </ul>
+      <h2>1. Introduzione</h2>
+      <p>ScopaScore rispetta la tua privacy. Questa Privacy Policy descrive come raccogliamo, utilizziamo e proteggiamo le tue informazioni personali.</p>
 
-    <h2>3. Utilizzo dei dati</h2>
-    <p>I dati vengono utilizzati esclusivamente per:</p>
-    <ul>
-      <li>Fornire le funzionalità dell'app (partite, classifiche, statistiche)</li>
-      <li>Identificare l'utente all'interno dell'app</li>
-      <li>Mostrare le statistiche di gioco</li>
-    </ul>
+      <h2>2. Dati raccolti</h2>
+      <p>Raccogliamo i seguenti dati:</p>
+      <ul>
+        <li>Email e nome visualizzato (tramite registrazione o login Google)</li>
+        <li>Dati delle partite (punteggi, giocatori, date)</li>
+        <li>Lista amici aggiunti nell'app</li>
+      </ul>
 
-    <h2>4. Condivisione dei dati</h2>
-    <p>Non vendiamo né condividiamo i tuoi dati con terze parti. I dati sono archiviati su Firebase (Google) con sede nell'Unione Europea.</p>
+      <h2>3. Utilizzo dei dati</h2>
+      <p>I dati vengono utilizzati esclusivamente per:</p>
+      <ul>
+        <li>Fornire le funzionalità dell'app (partite, classifiche, statistiche)</li>
+        <li>Identificare l'utente all'interno dell'app</li>
+        <li>Mostrare le statistiche di gioco</li>
+      </ul>
 
-    <h2>5. Conservazione dei dati</h2>
-    <p>I tuoi dati vengono conservati finché il tuo account è attivo. Puoi eliminare il tuo account in qualsiasi momento dalla pagina Profilo dell'app.</p>
+      <h2>4. Condivisione dei dati</h2>
+      <p>Non vendiamo né condividiamo i tuoi dati con terze parti. I dati sono archiviati su Firebase (Google) con sede nell'Unione Europea.</p>
 
-    <h2>6. Diritti dell'utente (GDPR)</h2>
-    <p>In conformità con il GDPR hai il diritto di:</p>
-    <ul>
-      <li>Accedere ai tuoi dati personali</li>
-      <li>Modificare i tuoi dati</li>
-      <li>Eliminare il tuo account e tutti i dati associati</li>
-      <li>Opporti al trattamento dei dati</li>
-    </ul>
+      <h2>5. Conservazione dei dati</h2>
+      <p>I tuoi dati vengono conservati finché il tuo account è attivo. Puoi eliminare il tuo account in qualsiasi momento dalla pagina Profilo dell'app.</p>
 
-    <h2>7. Cookie</h2>
-    <p>L'app non utilizza cookie di profilazione o tracciamento.</p>
+      <h2>6. Diritti dell'utente (GDPR)</h2>
+      <p>In conformità con il GDPR hai il diritto di:</p>
+      <ul>
+        <li>Accedere ai tuoi dati personali</li>
+        <li>Modificare i tuoi dati</li>
+        <li>Eliminare il tuo account e tutti i dati associati</li>
+        <li>Opporti al trattamento dei dati</li>
+      </ul>
 
-    <h2>8. Sicurezza</h2>
-    <p>I dati sono protetti tramite Firebase Authentication e le regole di sicurezza di Firestore.</p>
+      <h2>7. Cookie</h2>
+      <p>L'app non utilizza cookie di profilazione o tracciamento.</p>
 
-    <h2>9. Contatti</h2>
-    <p>Per qualsiasi domanda sulla privacy contattaci a: <a href="mailto:gtarraran992@gmail.com">gtarraran992@gmail.com</a></p>
+      <h2>8. Sicurezza</h2>
+      <p>I dati sono protetti tramite Firebase Authentication e le regole di sicurezza di Firestore.</p>
 
-    <div class="divider"></div>
+      <h2>9. Contatti</h2>
+      <p>Per qualsiasi domanda sulla privacy contattaci a: <a href="mailto:gtarraran992@gmail.com">gtarraran992@gmail.com</a></p>
+    </div>
 
-    <h1>Termini di Servizio</h1>
-    <p class="date">Ultimo aggiornamento: Aprile 2026</p>
+    <!-- Termini di Servizio -->
+    <div class="section">
+      <div class="section-badge">Documento legale</div>
+      <div class="section-title">Termini di Servizio</div>
+      <div class="section-date">Ultimo aggiornamento: Aprile 2026</div>
 
-    <h2>1. Accettazione dei termini</h2>
-    <p>Utilizzando ScopaScore accetti i presenti Termini di Servizio. Se non li accetti, ti preghiamo di non utilizzare l'app.</p>
+      <h2>1. Accettazione dei termini</h2>
+      <p>Utilizzando ScopaScore accetti i presenti Termini di Servizio. Se non li accetti, ti preghiamo di non utilizzare l'app.</p>
 
-    <h2>2. Descrizione del servizio</h2>
-    <p>ScopaScore è un'app gratuita per il conteggio dei punti nel gioco di carte Scopa. Permette di tracciare partite, visualizzare statistiche e confrontarsi con gli amici.</p>
+      <h2>2. Descrizione del servizio</h2>
+      <p>ScopaScore è un'app gratuita per il conteggio dei punti nel gioco di carte Scopa. Permette di tracciare partite, visualizzare statistiche e confrontarsi con gli amici.</p>
 
-    <h2>3. Account utente</h2>
-    <p>Per utilizzare ScopaScore è necessario creare un account. Sei responsabile della sicurezza delle tue credenziali di accesso.</p>
+      <h2>3. Account utente</h2>
+      <p>Per utilizzare ScopaScore è necessario creare un account. Sei responsabile della sicurezza delle tue credenziali di accesso.</p>
 
-    <h2>4. Comportamento dell'utente</h2>
-    <p>Ti impegni a non utilizzare l'app per scopi illeciti o per danneggiare altri utenti.</p>
+      <h2>4. Comportamento dell'utente</h2>
+      <p>Ti impegni a non utilizzare l'app per scopi illeciti o per danneggiare altri utenti.</p>
 
-    <h2>5. Limitazione di responsabilità</h2>
-    <p>ScopaScore è fornita "così com'è". Non garantiamo la disponibilità continua del servizio e non siamo responsabili per eventuali perdite di dati.</p>
+      <h2>5. Limitazione di responsabilità</h2>
+      <p>ScopaScore è fornita "così com'è". Non garantiamo la disponibilità continua del servizio e non siamo responsabili per eventuali perdite di dati.</p>
 
-    <h2>6. Modifiche ai termini</h2>
-    <p>Ci riserviamo il diritto di modificare questi termini. Le modifiche saranno comunicate tramite aggiornamento dell'app.</p>
+      <h2>6. Modifiche ai termini</h2>
+      <p>Ci riserviamo il diritto di modificare questi termini. Le modifiche saranno comunicate tramite aggiornamento dell'app.</p>
 
-    <h2>7. Legge applicabile</h2>
-    <p>I presenti termini sono regolati dalla legge italiana.</p>
+      <h2>7. Legge applicabile</h2>
+      <p>I presenti termini sono regolati dalla legge italiana.</p>
 
-    <h2>8. Contatti</h2>
-    <p>Per domande: <a href="mailto:gtarraran992@gmail.com">gtarraran992@gmail.com</a></p>
+      <h2>8. Contatti</h2>
+      <p>Per domande: <a href="mailto:gtarraran992@gmail.com">gtarraran992@gmail.com</a></p>
+    </div>
 
-    <div class="divider"></div>
-    <div class="footer">© 2026 ScopaScore · <a href="mailto:gtarraran992@gmail.com">gtarraran992@gmail.com</a></div>
+    <!-- Eliminazione Account -->
+    <div class="section">
+      <div class="section-badge">Gestione account</div>
+      <div class="section-title">Eliminazione Account</div>
+      <div class="section-date">Come eliminare il tuo account ScopaScore</div>
+
+      <h2>Procedura di eliminazione</h2>
+      <p>Per eliminare il tuo account e tutti i dati associati direttamente dall'app:</p>
+      <div class="highlight-box">
+        <ol>
+          <li>Apri l'app ScopaScore</li>
+          <li>Vai su <strong>Profilo</strong> (icona 👤 in alto a destra)</li>
+          <li>Scorri fino in fondo</li>
+          <li>Tocca <strong>"Elimina account"</strong></li>
+          <li>Conferma l'eliminazione</li>
+        </ol>
+      </div>
+
+      <h2>Cosa viene eliminato</h2>
+      <p>L'eliminazione dell'account rimuove definitivamente:</p>
+      <ul>
+        <li>Il tuo profilo e i tuoi dati personali</li>
+        <li>Tutte le partite associate al tuo account</li>
+        <li>La tua lista amici</li>
+      </ul>
+
+      <h2>Eliminazione via email</h2>
+      <p>In alternativa puoi richiedere l'eliminazione contattandoci a: <a href="mailto:gtarraran992@gmail.com">gtarraran992@gmail.com</a></p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      © 2026 ScopaScore &nbsp;·&nbsp; <a href="mailto:gtarraran992@gmail.com">gtarraran992@gmail.com</a>
+    </div>
+
   </div>
-  <div class="divider"></div>
-
-<h1 id="elimina-account">Eliminazione Account</h1>
-<p class="date">Come eliminare il tuo account ScopaScore</p>
-
-<h2>Procedura di eliminazione</h2>
-<p>Per eliminare il tuo account e tutti i dati associati direttamente dall'app:</p>
-<ol style="color: #444; padding-left: 20px; margin-bottom: 8px;">
-  <li style="margin-bottom: 8px;">Apri l'app ScopaScore</li>
-  <li style="margin-bottom: 8px;">Vai su <strong>Profilo</strong> (icona 👤 in alto a destra)</li>
-  <li style="margin-bottom: 8px;">Scorri fino in fondo</li>
-  <li style="margin-bottom: 8px;">Clicca su <strong>"Elimina account"</strong></li>
-  <li style="margin-bottom: 8px;">Conferma l'eliminazione</li>
-</ol>
-
-<h2>Cosa viene eliminato</h2>
-<p>L'eliminazione dell'account rimuove definitivamente:</p>
-<ul>
-  <li>Il tuo profilo e i tuoi dati personali</li>
-  <li>Tutte le partite associate al tuo account</li>
-  <li>La tua lista amici</li>
-</ul>
-
-<h2>Eliminazione via email</h2>
-<p>In alternativa puoi richiedere l'eliminazione contattandoci a: <a href="mailto:gtarraran992@gmail.com">gtarraran992@gmail.com</a></p>
 </body>
 </html>
