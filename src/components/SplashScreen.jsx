@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import DenariLogo from './DenariLogo'
 import { playSound } from '../utils/audio'
 import { useTranslation } from 'react-i18next'
+import { NativeAudio } from '@capacitor-community/native-audio'
+import { Capacitor } from '@capacitor/core'
 
 export default function SplashScreen({ onFinish }) {
   const { t } = useTranslation()
@@ -16,12 +18,32 @@ export default function SplashScreen({ onFinish }) {
   else if (!savedTheme && !prefersDark) bgColor = '#1a3a2a'
   const subtitleColor = bgColor === '#1a1a2e' ? '#5a5440' : '#6b8a78'
 
-  useEffect(() => {
-    playSound('apertura')
-    const timer1 = setTimeout(() => setFadeOut(true), 1800)
-    const timer2 = setTimeout(() => onFinish(), 2300)
-    return () => { clearTimeout(timer1); clearTimeout(timer2) }
-  }, [])
+useEffect(() => {
+  let cancelled = false
+
+  async function playApertura() {
+    try {
+      await NativeAudio.preload({
+        assetId: 'apertura',
+        assetPath: 'apertura.mp3',
+        audioChannelNum: 1,
+        isUrl: false,
+      })
+    } catch (e) {
+      // già precaricato, va bene
+    }
+    if (!cancelled) await playSound('apertura')
+  }
+
+  playApertura()
+  const timer1 = setTimeout(() => setFadeOut(true), 1800)
+  const timer2 = setTimeout(() => onFinish(), 2300)
+  return () => {
+    cancelled = true
+    clearTimeout(timer1)
+    clearTimeout(timer2)
+  }
+}, [])
 
   return (
     <div style={{
