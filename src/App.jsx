@@ -48,53 +48,57 @@ export default function App() {
       playSound('notifica')
     })
 
-    async function scheduleNotifica() {
-      const { display } = await LocalNotifications.checkPermissions()
-      if (display !== 'granted') {
-        const { display: granted } = await LocalNotifications.requestPermissions()
-        if (granted !== 'granted') return
-      }
-      await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
+async function scheduleNotifica() {
+  const { display } = await LocalNotifications.checkPermissions()
+  if (display !== 'granted') {
+    const { display: granted } = await LocalNotifications.requestPermissions()
+    if (granted !== 'granted') return
+  }
 
-      const now = new Date()
-      const next = new Date()
-      next.setHours(12, 0, 0, 0)
-      if (now >= next) next.setDate(next.getDate() + 1)
+const pending = await LocalNotifications.getPending()
+if (pending.notifications.length > 0) {
+  await LocalNotifications.cancel({
+    notifications: pending.notifications.map(n => ({ id: n.id }))
+  })
+}
+  const now = new Date()
+  const next = new Date()
+  next.setHours(12, 0, 0, 0)
+  if (now >= next) next.setDate(next.getDate() + 1)
 
-      const lang = localStorage.getItem('i18nextLng') || 'it'
+  const lang = localStorage.getItem('i18nextLng') || 'it'
 
-      const bodies = {
-        it: 'Sfida un amico a Scopa oggi!',
-        en: 'Challenge a friend to Scopa today!',
-        es: '¡Reta a un amigo a jugar a la Scopa hoy!',
-        fr: "Défie un ami à la Scopa aujourd'hui !",
-        de: 'Fordere heute einen Freund zur Scopa heraus!',
-      }
+  const bodies = {
+    it: 'Sfida un amico a Scopa oggi!',
+    en: 'Challenge a friend to Scopa today!',
+    es: '¡Reta a un amigo a jugar a la Scopa hoy!',
+    fr: "Défie un ami à la Scopa aujourd'hui !",
+    de: 'Fordere heute einen Freund zur Scopa heraus!',
+  }
 
-      const body = bodies[lang] || bodies['it']
+  const body = bodies[lang] || bodies['it']
 
-      const notification = {
-        id: 1,
-        title: '🃏 ScopaScore',
-        body,
-        schedule: {
-          at: next,
-          repeats: true,
-          every: 'day',
-        },
-        sound: null,
-      }
+  const notification = {
+    id: 1,
+    title: '🃏 ScopaScore',
+    body,
+    schedule: {
+      at: next,
+      repeats: true,
+      every: 'day',
+    },
+    sound: null,
+  }
 
-      // smallIcon e channelId solo su Android
-      if (isAndroid) {
-        notification.smallIcon = 'ic_stat_notify'
-        notification.channelId = 'promemoria'
-      }
+  if (isAndroid) {
+    notification.smallIcon = 'ic_stat_notify'
+    notification.channelId = 'promemoria'
+  }
 
-      await LocalNotifications.schedule({ notifications: [notification] })
-    }
+  await LocalNotifications.schedule({ notifications: [notification] })
+}
 
-    scheduleNotifica()
+scheduleNotifica()
   }, [])
 
   // 3. FCM token — dipende da user
