@@ -43,7 +43,8 @@ export default function Legal({ page }) {
 function PrivacyPolicyIT() {
   return (
     <div style={textStyle}>
-      <p style={dateStyle}>Ultimo aggiornamento: Aprile 2026</p>
+      <p style={dateStyle}>Ultimo aggiornamento: Maggio 2026</p>
+      <p><strong style={{ color: 'var(--cream)' }}>Titolare del trattamento:</strong> Giacomo Tarraran — <a href="mailto:gtarraran992@gmail.com" style={{ color: 'var(--gold)' }}>gtarraran992@gmail.com</a></p>
       <h2 style={h2}>1. Introduzione</h2>
       <p>ScopaScore ("noi", "nostra", "app") rispetta la tua privacy. Questa Privacy Policy descrive come raccogliamo, utilizziamo e proteggiamo le tue informazioni personali.</p>
       <h2 style={h2}>2. Dati raccolti</h2>
@@ -75,7 +76,8 @@ function PrivacyPolicyIT() {
 function PrivacyPolicyEN() {
   return (
     <div style={textStyle}>
-      <p style={dateStyle}>Last updated: April 2026</p>
+      <p style={dateStyle}>Last updated: May 2026</p>
+      <p><strong style={{ color: 'var(--cream)' }}>Data Controller:</strong> Giacomo Tarraran — <a href="mailto:gtarraran992@gmail.com" style={{ color: 'var(--gold)' }}>gtarraran992@gmail.com</a></p>
       <h2 style={h2}>1. Introduction</h2>
       <p>ScopaScore ("we", "our", "app") respects your privacy. This Privacy Policy describes how we collect, use and protect your personal information.</p>
       <h2 style={h2}>2. Data collected</h2>
@@ -107,7 +109,8 @@ function PrivacyPolicyEN() {
 function PrivacyPolicyES() {
   return (
     <div style={textStyle}>
-      <p style={dateStyle}>Última actualización: abril de 2026</p>
+      <p style={dateStyle}>Última actualización: Mayo 2026</p>
+      <p><strong style={{ color: 'var(--cream)' }}>Responsable del tratamiento:</strong> Giacomo Tarraran — <a href="mailto:gtarraran992@gmail.com" style={{ color: 'var(--gold)' }}>gtarraran992@gmail.com</a></p>
       <h2 style={h2}>1. Introducción</h2>
       <p>ScopaScore ("nosotros", "nuestra", "app") respeta tu privacidad. Esta Política de privacidad describe cómo recopilamos, usamos y protegemos tu información personal.</p>
       <h2 style={h2}>2. Datos recopilados</h2>
@@ -139,7 +142,8 @@ function PrivacyPolicyES() {
 function PrivacyPolicyFR() {
   return (
     <div style={textStyle}>
-      <p style={dateStyle}>Dernière mise à jour : avril 2026</p>
+      <p style={dateStyle}>Dernière mise à jour : Mai 2026</p>
+      <p><strong style={{ color: 'var(--cream)' }}>Responsable du traitement:</strong> Giacomo Tarraran — <a href="mailto:gtarraran992@gmail.com" style={{ color: 'var(--gold)' }}>gtarraran992@gmail.com</a></p>
       <h2 style={h2}>1. Introduction</h2>
       <p>ScopaScore ("nous", "notre", "app") respecte ta vie privée. Cette Politique de confidentialité décrit comment nous collectons, utilisons et protégeons tes informations personnelles.</p>
       <h2 style={h2}>2. Données collectées</h2>
@@ -171,7 +175,8 @@ function PrivacyPolicyFR() {
 function PrivacyPolicyDE() {
   return (
     <div style={textStyle}>
-      <p style={dateStyle}>Letzte Aktualisierung: April 2026</p>
+      <p style={dateStyle}>Letzte Aktualisierung: Mai 2026</p>
+      <p><strong style={{ color: 'var(--cream)' }}>Verantwortlicher:</strong> Giacomo Tarraran — <a href="mailto:gtarraran992@gmail.com" style={{ color: 'var(--gold)' }}>gtarraran992@gmail.com</a></p>
       <h2 style={h2}>1. Einleitung</h2>
       <p>ScopaScore ("wir", "unser", "App") respektiert deine Privatsphäre. Diese Datenschutzrichtlinie beschreibt, wie wir deine persönlichen Daten erheben, verwenden und schützen.</p>
       <h2 style={h2}>2. Erhobene Daten</h2>
